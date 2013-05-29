@@ -3,7 +3,9 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
-os.chdir("/home/jkokkala/bwtc/")
+from config import path
+os.chdir(path)
+#os.chdir("/home/jkokkala/bwtc/")
 encoders = {"Huffman":"H","Wavelet": "W", "MTF-RLE0":"0","MTF":"F", "MTF-RLE":"f"}
 #encoders = {"Huffman":"H","MTF":"F", "MTFRL":"f"}
 preprocessors = ["pp"]
