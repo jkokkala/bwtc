@@ -1,11 +1,15 @@
+import utils
 from utils import *
 import os
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from config import path
+
+from matplotlib.backends.backend_pdf import PdfPages
+#bwtc path
 os.chdir(path)
-#os.chdir("/home/jkokkala/bwtc/")
+
 encoders = {"Huffman":"H","Wavelet": "W", "MTF-RLE0":"0","MTF":"F", "MTF-RLE":"f"}
 #encoders = {"Huffman":"H","MTF":"F", "MTFRL":"f"}
 preprocessors = ["pp"]
@@ -53,45 +57,91 @@ for inp in inputs.keys():
 save_backup()
 
 
-fig=plt.figure()
-ax=fig.add_subplot(111)
 
-legend=[]
-rects=[]
+def compressionratio(a):
+    return a["compression_ratio"]
 
-N=len(inputs)
-width=0.35
-ind = np.arange(N)*(0.5+len(encoders)*width)
+def compressiontotaltime(a):
+    return sum(a["compression_times"])
 
+def decompressiontotaltime(a):
+    return sum(a["decompression_times"])
 
-it=0
-mx=0
-for enc in encoders:
+def compressionentropytime(a):
+    return a["compression_times"][2]
 
-    legend.append(enc)
-    entries = [e for e in data_entries if e["encoder"]==enc]
-    ratios=[]
-    labels=[]
-    for a in entries:
-        ratios.append(a["decompression_times"][2])
-        labels.append(a["input"])
-    if(max(ratios)>mx):
-        mx=max(ratios)
-    rects.append(ax.bar(ind+it*width,ratios,width,color=getcolor()))
-    it+=1
+def decompressionentropytime(a):
+    return a["decompression_times"][2]
 
 
 
+plotdata = [
+    {   "title": "Compression ratios",
+        "values": compressionratio,
+        "ytitle": "Compression ratio",
+    },
+    {   "title": "Entropy encoding time",
+        "values": compressionentropytime,
+        "ytitle": "Encoding time",
+    },
+    {   "title": "Entropy decoding time",
+        "values": decompressionentropytime,
+        "ytitle": "Decoding time",
+    },
+    {   "title": "Total compression time",
+        "values": compressiontotaltime,
+        "ytitle": "Compression time",
+    },
+    {   "title": "Total decompression time",
+        "values": decompressiontotaltime,
+        "ytitle": "Decompression time",
+    },
+]
 
-ax.set_ylabel('Decompression time')
-ax.set_title('Decompression times')
-ax.set_xticks(ind+len(rects)*width/2)
-ax.set_xticklabels(tuple(labels))
-#plt.yticks(np.arange(0,mx+0.2,0.1))
-ax.legend(tuple([r[0] for r in rects]),tuple(legend))
-plt.show()
+pdf = PdfPages('scripts/stats.pdf')
+for plottype in plotdata:
+    utils.coloriter=0
+    fig=plt.figure()
+    ax=fig.add_subplot(111)
 
-    
+    legend=[]
+    rects=[]
+
+    N=len(inputs)
+    width=0.35
+    ind = np.arange(N)*(0.5+len(encoders)*width)
+
+
+    it=0
+    mx=0
+    for enc in encoders:
+
+        legend.append(enc)
+        entries = [e for e in data_entries if e["encoder"]==enc]
+        ratios=[]
+        labels=[]
+        for a in entries:
+            ratios.append(plottype["values"](a))
+            labels.append(a["input"])
+        if(max(ratios)>mx):
+            mx=max(ratios)
+        rects.append(ax.bar(ind+it*width,ratios,width,color=getcolor()))
+        it+=1
+
+
+
+
+    ax.set_ylabel(plottype['ytitle'])
+    ax.set_title(plottype['title'])
+    ax.set_xticks(ind+len(rects)*width/2)
+    ax.set_xticklabels(tuple(labels))
+    #plt.yticks(np.arange(0,mx+0.2,0.1))
+    ax.legend(tuple([r[0] for r in rects]),tuple(legend))
+    pdf.savefig(fig)
+
+pdf.close()
+
+        
 
 
 
