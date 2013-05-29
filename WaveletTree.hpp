@@ -298,7 +298,7 @@ WaveletTree<BitVector>::WaveletTree(const byte *src, size_t length) :
 #endif
     m_W(0)
 {
-  PROFILE("WaveletTree::WaveletTree");
+ // PROFILE("WaveletTree::WaveletTree");
   uint64 runFreqs[256] = {0};
 
   // Frequencies of run lengths are collected into map. They are indexed
@@ -367,7 +367,7 @@ WaveletTree<BitVector>::WaveletTree(const byte *src, size_t length)
     : m_bytesForCharacters(0), m_bytesForRuns(0)
 #endif
 {
-  PROFILE("WaveletTree::WaveletTree");
+  //PROFILE("WaveletTree::WaveletTree");
   uint64 runFreqs[256] = {0};
 
   utils::calculateRunFrequencies(runFreqs, src, length);
@@ -647,7 +647,7 @@ void WaveletTree<BitVector>::encodeTreeBF(Encoder& enc, ProbabilisticModel& pm,
                                           IntModel& gm, GapModel& gapm) const
 #endif
 {
-  PROFILE("WaveletTree::encodeTreeBF");
+  //PROFILE("WaveletTree::encodeTreeBF");
   /* Additional bitvector is used to encode gaps and continuous runs in the
    * parent's bitvector. */
   typedef std::pair<TreeNode<BitVector>*, BitVector> InternalNode;

@@ -58,6 +58,7 @@ class InStream {
   virtual void flushBuffer() = 0;
   virtual uint64 read48bits() = 0;
   virtual bool compressedDataEnding() = 0;
+  int pos;
 };
 
 /**

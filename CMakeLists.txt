@@ -20,7 +20,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
   add_definitions(-DNDEBUG)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fomit-frame-pointer -O3")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fomit-frame-pointer")
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-inline")
 endif()
@@ -29,7 +29,7 @@ set(EXECUTABLE_OUTPUT_PATH bin/)
 set(OBJECT_FILE_PATH ${bwtc_SOURCE_DIR}/${EXECUTABLE_OUTPUT_PATH})
 
 set(COMMON_SRC BitCoders.cpp Utils.cpp Streams.cpp 
-  WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp 
+    WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp TestCoders.cpp MTFCoders.cpp HuffmanUtil.cpp HuffmanRLUtil.cpp
   BWTBlock.cpp)
 add_library(common ${COMMON_SRC})
 

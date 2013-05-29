@@ -23,7 +23,6 @@
  *
  * Global definitions and typedefs for bwtc.
  */
-
 #ifndef GLOBAL_DEFS_H_
 #define GLOBAL_DEFS_H_
 

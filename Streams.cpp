@@ -144,6 +144,7 @@ RawInStream::RawInStream(const std::string &file_name) :
   }
   m_bigbuf_left = 0;
   m_bigbuf_pos = 0;
+  pos=0;
   assert(m_fileptr);
 }
 
@@ -171,6 +172,7 @@ int32 RawInStream::fetchByte() {
     if (m_bigbuf_left <= 0) return EOF;
   }
   --m_bigbuf_left;
+  pos++;
   return m_bigbuf[m_bigbuf_pos++];
 }
 

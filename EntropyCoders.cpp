@@ -32,7 +32,8 @@
 #include "EntropyCoders.hpp"
 #include "WaveletCoders.hpp"
 #include "HuffmanCoders.hpp"
-
+#include "TestCoders.hpp"
+#include "MTFCoders.hpp"
 namespace bwtc {
 
 EntropyEncoder*
@@ -42,11 +43,26 @@ giveEntropyEncoder(char encoder) {
       std::clog << "Using Huffman encoder\n";
     }
     return new HuffmanEncoder();
-  } else {
+   
+  } else if(encoder=='T') {
+    if(verbosity > 1) {
+      std::clog << "Using Test encoder\n";
+    }
+    return new TestEncoder();
+
+  } else if(encoder=='W') {
+  
     if(verbosity > 1) {
       std::clog << "Using Wavelet tree encoder\n";
     }
     return new WaveletEncoder(encoder);
+
+  }
+  else {
+    if(verbosity > 1) {
+      std::clog << "Using MTF encoder\n";
+    }
+    return new MTFEncoder(encoder);
   }
 }
 
@@ -56,11 +72,24 @@ EntropyDecoder* giveEntropyDecoder(char decoder) {
       std::clog << "Using Huffman decoder\n";
     }
     return new HuffmanDecoder();
-  } else {
+  } else if(decoder=='T') {
+    if(verbosity > 1) {
+      std::clog << "Using Test decoder\n";
+    }
+    return new TestDecoder();
+
+  }
+  else if(decoder=='W') {
     if(verbosity > 1) {
       std::clog << "Using Wavelet tree decoder\n";
     }
     return new WaveletDecoder(decoder);
+  }
+  else {
+    if(verbosity > 1) {
+      std::clog << "Using MTF decoder\n";
+    }
+    return new MTFDecoder(decoder);
   }
 }
 

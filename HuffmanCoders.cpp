@@ -35,7 +35,7 @@
 #include <string>
 #include <vector>
 #include <map> // for entropy profiling
-
+#include<cmath>
 #include "HuffmanCoders.hpp"
 #include "globaldefs.hpp"
 #include "Utils.hpp"
@@ -121,7 +121,17 @@ encodeData(const byte* block, const std::vector<uint32>& stats,
            uint32 blockSize, OutStream* out) {
   PROFILE("HuffmanEncoder::encodeData");
   size_t beg = 0;
-  
+
+
+    double entropy=0;
+    std::vector<int> ts(256,0);
+    for(int i=0;i<blockSize;i++) ts[*(block+i)]++;
+    for(int i=0;i<256;i++) {
+        if(ts[i]==0) continue;
+        entropy -= (ts[i]*1.0/blockSize) * log(ts[i]*1.0/blockSize);
+    }
+    std::cout<<"Entropy: "<<entropy<<"\n";
+
   // For storing runs data.
   byte *runseq = new byte[blockSize];
   uint32 *runlen = new uint32[blockSize];
@@ -143,6 +153,8 @@ encodeData(const byte* block, const std::vector<uint32>& stats,
     uint64 nRuns = utils::calculateRunFrequenciesAndStoreRuns(freqs,
       runseq, runlen, block_ptr + beg, current_cblock_size);
 
+    
+
 #ifdef ENTROPY_PROFILER
     {
       std::map<uint32, uint32> runDistribution, charDistribution;
@@ -150,7 +162,7 @@ encodeData(const byte* block, const std::vector<uint32>& stats,
         ++runDistribution[runlen[j]];
         ++charDistribution[runseq[j]];
       }
-      
+    
       for(std::map<uint32, uint32>::const_iterator it = runDistribution.begin();
           it != runDistribution.end(); ++it)
         std::cout << it->first << ":" <<  it->second << std::endl;

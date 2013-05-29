@@ -1,6 +1,6 @@
 #ifndef PROFILER_HPP_
 #define PROFILER_HPP_
-
+#define PROFILER_ON
 #ifdef PROFILER_ON
 #include "cycle.h"
 #include <iostream>
@@ -30,6 +30,7 @@ class ProfileManager {
     const Results& results = prof.getResults();
     std::clog << "name,calls,time" << std::endl;
     for(Results::const_iterator it = results.begin(); it != results.end(); ++it) {
+        std::clog.precision(15);
       std::clog << it->first << "," << it->second.calls << ","
                 << it->second.time << std::endl;
     }
