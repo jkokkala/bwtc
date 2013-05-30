@@ -70,7 +70,7 @@ void validateStartingPoints(uint32 sp) {
 
 /* Notifier function for encoding option choice */
 void validateEncodingOption(char c) {
-  if (c == 'H' || c == 'm' || c == 'M' || c == 'u' || c == 'b' || c == 'B' || c=='T' || c=='W' || c=='f' || c=='F' || c=='0'
+  if (c == 'H' || c == 'm' || c == 'M' || c == 'u' || c == 'b' || c == 'B' || c=='T' || c=='W' || c=='f' || c=='F' || c=='0' || c=='X' || c=='x' || c=='0'
       /* || c == <other option> */) return;
 
   class EncodingExc : public std::exception {
@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
          "preprocessor options:\n"
          "  p -- pair replacer\n"
          "For example \"pp\" would run pair replacer twice")
-        ("enc,e", po::value<char>(&encoding)->default_value('F')->
+        ("enc,e", po::value<char>(&encoding)->default_value('X')->
          notifier(&validateEncodingOption),
          "entropy encoding scheme, options:\n"
          "  H -- Huffman coding with run-length encoding\n"

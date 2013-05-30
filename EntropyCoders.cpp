@@ -33,6 +33,7 @@
 #include "WaveletCoders.hpp"
 #include "HuffmanCoders.hpp"
 #include "MTFCoders.hpp"
+#include "XMTFCoders.hpp"
 namespace bwtc {
 
 EntropyEncoder*
@@ -52,11 +53,17 @@ giveEntropyEncoder(char encoder) {
     return new WaveletEncoder(encoder);
 
   }
-  else {
+  else if(encoder=='F' || encoder=='f' || encoder=='0') {
     if(verbosity > 1) {
       std::clog << "Using MTF encoder\n";
     }
     return new MTFEncoder(encoder);
+  }
+  else if(encoder=='X' || encoder=='x' || encoder=='O') {
+    if(verbosity > 1) {
+      std::clog << "Using MTF encoder\n";
+    }
+    return new XMTFEncoder(encoder);
   }
 }
 
@@ -73,11 +80,17 @@ EntropyDecoder* giveEntropyDecoder(char decoder) {
     }
     return new WaveletDecoder(decoder);
   }
-  else {
+  else if(decoder=='F' || decoder=='f' || decoder=='0') {
     if(verbosity > 1) {
       std::clog << "Using MTF decoder\n";
     }
     return new MTFDecoder(decoder);
+  }
+  else if(decoder=='X' || decoder=='x' || decoder=='O') {
+    if(verbosity > 1) {
+      std::clog << "Using MTF decoder\n";
+    }
+    return new XMTFDecoder(decoder);
   }
 }
 
