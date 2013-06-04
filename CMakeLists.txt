@@ -29,7 +29,7 @@ set(EXECUTABLE_OUTPUT_PATH bin/)
 set(OBJECT_FILE_PATH ${bwtc_SOURCE_DIR}/${EXECUTABLE_OUTPUT_PATH})
 
 set(COMMON_SRC BitCoders.cpp Utils.cpp Streams.cpp 
-    WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp MTFCoders.cpp HuffmanUtil.cpp HuffmanRLUtil.cpp
+    WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp MTFCoders.cpp HuffmanUtil.cpp
   BWTBlock.cpp)
 add_library(common ${COMMON_SRC})
 
@@ -69,7 +69,7 @@ add_executable(postprocess ${POSTPROCESSOR_SRC})
 target_link_libraries(postprocess common preprocessors 
   ${Boost_LIBRARIES})
 
-enable_testing()
+#enable_testing()
 
 set(CMAKE_BUILD_TYPE Debug)
-add_subdirectory(${TEST_SRC_DIR})
+#add_subdirectory(${TEST_SRC_DIR})
