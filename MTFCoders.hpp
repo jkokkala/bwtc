@@ -39,7 +39,11 @@
 
 
 namespace bwtc {
-
+    struct Node {
+        Node* next;
+        byte val;
+        Node(byte v) : val(v) {}
+    };
     class MTFEncoder : public EntropyEncoder {
         public:
             MTFEncoder(char encoder);

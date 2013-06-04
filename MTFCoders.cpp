@@ -142,7 +142,17 @@ namespace bwtc {
         bwtm.doTransform(block);
         PROFILE("MTFEncoder::encodeData");
         size_t bytes_used=block.writeHeader(out)+6;
-        for(int i=0;i<=0xff;i++) m_rankList.push_back(i);
+
+
+        Node* start=new Node(0);
+        Node* curr=start;
+        Node* prev;
+        for(int i=1;i<=0xff;i++) {
+            curr->next=new Node(i);
+            curr=curr->next;
+        }
+        curr->next=NULL;
+
         bool rle=true;
         byte maxval=255;
         int minrun=1;
@@ -159,18 +169,21 @@ namespace bwtc {
         if(rle) data= RLE(block.begin(),block.size(),maxval,minrun,out,bytes_used);
         else data=std::vector<byte>(block.begin(),block.end());
         std::cout<<"bytes used for rle: "<<bytes_used-a<<"\n";
+        int pos;
         for(int  i = 0;i!=data.size();i++) {
+            curr=start;
             byte cur=data[i];
-            for(int pos=0;pos<=0xff;pos++) {
-                if(m_rankList[pos]==cur) {
-                    data[i]=pos;
-                    for(int j=pos;j>0;j--) {
-                        m_rankList[j]=m_rankList[j-1];                            
-                    }
-                    m_rankList[0]=cur;
-                    break;
-                }
+            for(pos=0;pos<256;pos++) {
+                if(curr->val==cur) break;
+                prev=curr;
+                curr=curr->next;
             }
+            data[i]=pos;
+            if(pos==0) continue;
+            prev->next=curr->next;
+            curr->next=start;
+            start=curr;
+
         }
         HuffmanUtilEncoder huffman;
         bytes_used+=huffman.encode(data.data(),data.size(),out);
@@ -208,8 +221,14 @@ namespace bwtc {
         huffman.decodeBlock(data,in);
         block.setSize(data.size()+extra);
 
-        //initialize rank list
-        for(int i=0;i<=0xff;i++) m_rankList.push_back(i);
+        Node* start=new Node(0);
+        Node* curr=start;
+        Node* prevnode;
+        for(int i=1;i<=0xff;i++) {
+            curr->next=new Node(i);
+            curr=curr->next;
+        }
+        curr->next=NULL;
 
         byte* block_ptr=block.begin();
 
@@ -220,7 +239,12 @@ namespace bwtc {
         int wrote=0;
         for(int i=0;i<data.size();i++) {
             byte rank = data[i];
-            byte temp = m_rankList[rank];
+            curr=start;
+            for(int j=0;j<rank;j++) {
+                prevnode=curr;
+                curr=curr->next;
+            }
+            byte temp = curr->val;
             wrote++;
             *(block_ptr++) = temp;
             if(rle) {
@@ -237,12 +261,10 @@ namespace bwtc {
                     }
                 }
             }
-
-            for(int pos=rank-1;pos>=0;pos--) {
-                m_rankList[pos+1]=m_rankList[pos];
-            }
-
-            m_rankList[0]=temp;
+            if(rank==0) continue;
+            prevnode->next=curr->next;
+            curr->next=start;
+            start=curr;
         }
     }
     MTFDecoder::MTFDecoder(char decoder) : m_decoder(decoder) {}
