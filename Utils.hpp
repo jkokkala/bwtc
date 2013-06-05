@@ -436,8 +436,8 @@ void printBitRepresentation(Integer word) {
   std::cout << "\n";
 } 
 
-
-inline size_t gammaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out) {
+template<typename Integer>
+inline size_t gammaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
     size_t bytes_used=0;
     out->flush();
 
@@ -467,14 +467,15 @@ inline size_t gammaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out)
     }
     return bytes_used;
 }
-inline void gammaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
+template<typename Integer>
+inline void gammaDecode(std::vector<Integer>& ints, bwtc::InStream* in) {
         for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
 
             int zeros = 0;
 
             while (!in->readBit())
                 ++zeros;
-            bwtc::uint64 value = 0;        
+            Integer value = 0;        
             for (bwtc::int32 t = 0; t < zeros; ++t) {
                 bwtc::int32 bit = in->readBit();
                 value = (value << 1) | bit;
@@ -483,7 +484,8 @@ inline void gammaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
             ints[k] = value;
         }
 }
-inline size_t deltaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out) {
+template<typename Integer>
+inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
     size_t bytes_used=0;
     out->flush();
 
@@ -520,14 +522,15 @@ inline size_t deltaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out)
     }
     return bytes_used;
 }
-inline void deltaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
+template<typename Integer>
+inline void deltaDecode(std::vector<Integer>& ints, bwtc::InStream* in) {
         for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
 
             int zeros = 0;
 
             while (!in->readBit())
                 ++zeros;
-            bwtc::uint64 value = 0;        
+            Integer value = 0;        
             for (bwtc::int32 t = 0; t < zeros; ++t) {
                 bwtc::int32 bit = in->readBit();
                 value = (value << 1) | bit;
@@ -536,7 +539,8 @@ inline void deltaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
             //gamma code: value
             
             // read value-1 bits
-            bwtc::uint64 val2=1;
+            
+            Integer val2=1;
             for(bwtc::int32 t=0;t<value-1;t++) {
                 bwtc::int32 bit = in->readBit();
                 val2=(val2<<1)|bit;
