@@ -192,6 +192,7 @@ namespace bwtc {
         block.setSize(data.size()+extra);
 
         //initialize rank list
+        m_rankList.clear();
         for(int i=0;i<=0xff;i++) m_rankList.push_back(i);
 
         byte* block_ptr=block.begin();
