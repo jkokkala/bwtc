@@ -19,3 +19,16 @@ gunzip dblp.xml.50MB.gz
 #sources
 wget http://pizzachili.dcc.uchile.cl/texts/code/sources.50MB.gz
 gunzip sources.50MB.gz
+
+#einstein
+wget http://pizzachili.dcc.uchile.cl/repcorpus/real/einstein.en.txt.7z
+7z e einstein.en.txt.7z
+head einstein.en.txt -c 52428800 > einstein.en.50MB
+rm einstein.en.t*
+
+#kernel
+wget http://pizzachili.dcc.uchile.cl/repcorpus/real/kernel.7z
+7z e kernel.7z
+head kernel -c 52428800 > kernel.50MB
+rm kernel
+rm kernel.7z

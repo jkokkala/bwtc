@@ -54,7 +54,7 @@ namespace bwtc {
 
             void encodeData(const byte* data, const std::vector<uint32>& stats,
                     uint32 blockSize, OutStream* out);
-    std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
+    std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used, char encoder);
 
 
 
@@ -73,7 +73,7 @@ namespace bwtc {
             ~MTFDecoder();
 
             void decodeBlock(BWTBlock& block, InStream* in);
-            std::vector<int> readRLE(InStream* in, int& extra);
+            std::vector<uint64> readRLE(InStream* in, int& extra, char decoder);
 
         private:
             std::vector<byte> m_rankList;

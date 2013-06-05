@@ -10,10 +10,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 #bwtc path
 os.chdir(path)
 
-encoders = {"Huffman":"H","Wavelet": "W", "MTF-RLE0":"0","MTF":"F", "MTF-RLE":"f"}
+encoders = {"Huffman":"H","Wavelet": "W", "MTF":"F", "Gamma-RLE-MTF":"0", "Delta-RLE-MTF":"f"}
 #encoders = {"Huffman":"H","MTF":"F", "MTFRL":"f"}
 preprocessors = ["pp"]
-inputs= {"XML50M":"inputs/dblp.xml.50MB","DNA50M":"inputs/dna.50MB","English50M":"inputs/english.50MB","Wiki50M":"inputs/enwik8.50MB","Kernel50M":"inputs/sources.50MB"}
+inputs= {"XML50M":"inputs/dblp.xml.50MB","DNA50M":"inputs/dna.50MB","English50M":"inputs/english.50MB","Wiki50M":"inputs/enwik8.50MB","Kernel50M":"inputs/sources.50MB","Einstein.en.50M":"inputs/einstein.en.50MB","Kernel50M":"inputs/kernel.50MB"}
 comp_algs = ["precompress","doTransform","encodeData"]
 decomp_algs=["uncompress","doTransform","decodeBlock"]
 #inputs={"Wiki":"inputs/wiki"}
@@ -101,7 +101,8 @@ plotdata = [
 pdf = PdfPages('scripts/stats.pdf')
 for plottype in plotdata:
     utils.coloriter=0
-    fig=plt.figure()
+    #    fig=plt.figure(figsize=(15,6))
+    fig=plt.figure(figsize=(15,6))
     ax=fig.add_subplot(111)
 
     legend=[]
@@ -136,8 +137,8 @@ for plottype in plotdata:
     ax.set_xticks(ind+len(rects)*width/2)
     ax.set_xticklabels(tuple(labels))
     #plt.yticks(np.arange(0,mx+0.2,0.1))
-    ax.legend(tuple([r[0] for r in rects]),tuple(legend))
-    pdf.savefig(fig)
+    legend=ax.legend(tuple([r[0] for r in rects]),tuple(legend),loc='center left',bbox_to_anchor = (1.0, 0.5))
+    pdf.savefig(fig,bbox_extra_artists=(legend,), bbox_inches='tight')
 
 pdf.close()
 
