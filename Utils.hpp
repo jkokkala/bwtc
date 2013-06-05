@@ -35,7 +35,7 @@
 #include <stack>
 #include <utility>
 #include <vector>
-
+#include "Streams.hpp"
 
 using bwtc::uint64;
 using bwtc::byte;
@@ -434,7 +434,119 @@ void printBitRepresentation(Integer word) {
     ++i;
   }
   std::cout << "\n";
-}  
+} 
+
+
+inline size_t gammaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out) {
+    size_t bytes_used=0;
+    out->flush();
+
+    bwtc::uint64 buffer = 0;
+    bwtc::int32 bitsInBuffer = 0;
+    for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
+        bwtc::uint64 num=ints[k];
+        int gammaCodeLen = utils::logFloor(num) * 2 + 1;
+        while (bitsInBuffer + gammaCodeLen > 64) {
+            bitsInBuffer -= 8;
+            out->writeByte((buffer >> bitsInBuffer) & 0xff);
+            bytes_used++;
+        }
+        buffer <<= gammaCodeLen;
+        buffer |= num;
+        bitsInBuffer += gammaCodeLen;
+    }
+    while (bitsInBuffer >= 8) {
+        bitsInBuffer -= 8;
+        out->writeByte((buffer >> bitsInBuffer) & 0xff);
+        ++bytes_used;
+    }
+    if (bitsInBuffer > 0) {
+        buffer <<= (8 - bitsInBuffer);
+        out->writeByte(buffer & 0xff);
+        ++bytes_used;
+    }
+    return bytes_used;
+}
+inline void gammaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
+        for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
+
+            int zeros = 0;
+
+            while (!in->readBit())
+                ++zeros;
+            bwtc::uint64 value = 0;        
+            for (bwtc::int32 t = 0; t < zeros; ++t) {
+                bwtc::int32 bit = in->readBit();
+                value = (value << 1) | bit;
+            }
+            value |= (1 << zeros);
+            ints[k] = value;
+        }
+}
+inline size_t deltaEncode(std::vector<bwtc::uint64>& ints, bwtc::OutStream* out) {
+    size_t bytes_used=0;
+    out->flush();
+
+    bwtc::uint64 buffer = 0;
+    bwtc::int32 bitsInBuffer = 0;
+    for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
+        bwtc::uint64 n=ints[k];
+        int codelength = logFloor(n)+2*logFloor(logFloor(n)+1UL)+1;
+        uint64 len = logFloor(n)+1;
+        uint64 lenoflen = logFloor(len);
+
+        while (bitsInBuffer + codelength > 64) {
+            bitsInBuffer -= 8;
+
+            out->writeByte((buffer >> bitsInBuffer) & 0xff);
+            bytes_used++;
+        }
+        buffer <<= 2*lenoflen+1;
+        buffer |= len;
+        buffer <<=len-1;
+        buffer |= ((~(1<<(len-1))) & n);
+        bitsInBuffer += codelength;
+
+    }
+    while (bitsInBuffer >= 8) {
+        bitsInBuffer -= 8;
+        out->writeByte((buffer >> bitsInBuffer) & 0xff);
+        ++bytes_used;
+    }
+    if (bitsInBuffer > 0) {
+        buffer <<= (8 - bitsInBuffer);
+        out->writeByte(buffer & 0xff);
+        ++bytes_used;
+    }
+    return bytes_used;
+}
+inline void deltaDecode(std::vector<bwtc::uint64>& ints, bwtc::InStream* in) {
+        for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
+
+            int zeros = 0;
+
+            while (!in->readBit())
+                ++zeros;
+            bwtc::uint64 value = 0;        
+            for (bwtc::int32 t = 0; t < zeros; ++t) {
+                bwtc::int32 bit = in->readBit();
+                value = (value << 1) | bit;
+            }
+            value |= (1 << zeros);
+            //gamma code: value
+            
+            // read value-1 bits
+            bwtc::uint64 val2=1;
+            for(bwtc::int32 t=0;t<value-1;t++) {
+                bwtc::int32 bit = in->readBit();
+                val2=(val2<<1)|bit;
+                
+            }
+            ints[k]=val2;
+        }
+}
+
+
 } //namespace utils
 
 #endif

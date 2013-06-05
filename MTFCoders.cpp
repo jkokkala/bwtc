@@ -50,10 +50,10 @@ namespace bwtc {
 
     //maxval = maximum value for rle, e.g. RLE0 maxval=0, RLE maxval=255
     //minrun = min number of occurrences in a run
-    std::vector<byte> MTFEncoder::RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used) {
+    std::vector<byte> MTFEncoder::RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used,char encoder) {
         
         std::vector<byte> data;
-        std::vector<int> runlengths;
+        std::vector<uint64> runlengths;
         data.reserve(length);
         int current_runlength=1;
         byte current_runchar=0;
@@ -80,60 +80,32 @@ namespace bwtc {
         }
         if(current_runlength >=minrun && current_runchar <= maxval) runlengths.push_back(current_runlength-minrun+1);
         out->flush();
-
-
-        // Store the lengths of runs.
         int pos=out->getPos();
         for(int i=0;i<6;i++) out->writeByte(0);
         out->write48bits(runlengths.size(),pos);
         bytes_used+=6;
+        if(encoder=='f') {
+            bytes_used += utils::deltaEncode(runlengths,out);
+        }
+        else {
+            bytes_used+= utils::gammaEncode(runlengths,out);
+        }
         out->flush();
 
-        uint64 buffer = 0;
-        int32 bitsInBuffer = 0;
-        for (uint64 k = 0; k < runlengths.size(); ++k) {
-            uint64 num=runlengths[k];
-            int gammaCodeLen = utils::logFloor(num) * 2 + 1;
-            while (bitsInBuffer + gammaCodeLen > 64) {
-                bitsInBuffer -= 8;
-                out->writeByte((buffer >> bitsInBuffer) & 0xff);
-                bytes_used++;
-            }
-            buffer <<= gammaCodeLen;
-            buffer |= num;
-            bitsInBuffer += gammaCodeLen;
-        }
-        while (bitsInBuffer >= 8) {
-            bitsInBuffer -= 8;
-            out->writeByte((buffer >> bitsInBuffer) & 0xff);
-            ++bytes_used;
-        }
-        if (bitsInBuffer > 0) {
-            buffer <<= (8 - bitsInBuffer);
-            out->writeByte(buffer & 0xff);
-            ++bytes_used;
-        }
         return data;
     }
-    std::vector<int> MTFDecoder::readRLE(InStream* in, int& extra) {
+    
+    std::vector<uint64> MTFDecoder::readRLE(InStream* in, int& extra, char decoder) {
         int num_runs= in->read48bits();
-        std::vector<int> runs(num_runs);
+        std::vector<uint64> runs(num_runs);
         extra=0;
+        if(decoder=='f')
+        utils::deltaDecode(runs,in);
+        else utils::gammaDecode(runs,in);
         for (uint64 k = 0; k < num_runs; ++k) {
-
-            int zeros = 0;
-
-            while (!in->readBit())
-                ++zeros;
-            uint64 value = 0;        
-            for (int32 t = 0; t < zeros; ++t) {
-                int32 bit = in->readBit();
-                value = (value << 1) | bit;
-            }
-            value |= (1 << zeros);
-            runs[k] = value;
-            extra += value -1;
+            extra += runs[k] -1;
         }
+        in->flushBuffer();
         return runs;
 
     }
@@ -158,7 +130,7 @@ namespace bwtc {
         int minrun=1;
         if(m_encoder=='F') {
             rle=false;
-        } else if(m_encoder=='f') {
+        } else if(m_encoder=='f'||m_encoder=='0') {
             rle=true;
             maxval=255;
             minrun=3;
@@ -166,7 +138,7 @@ namespace bwtc {
 
         std::vector<byte> data;
         size_t a=bytes_used;
-        if(rle) data= RLE(block.begin(),block.size(),maxval,minrun,out,bytes_used);
+        if(rle) data= RLE(block.begin(),block.size(),maxval,minrun,out,bytes_used,m_encoder);
         else data=std::vector<byte>(block.begin(),block.end());
         std::cout<<"bytes used for rle: "<<bytes_used-a<<"\n";
         int pos;
@@ -190,9 +162,7 @@ namespace bwtc {
         return bytes_used;
     }
 
-
-
-    void MTFDecoder::decodeBlock(BWTBlock& block, InStream* in) {
+ void MTFDecoder::decodeBlock(BWTBlock& block, InStream* in) {
 
         PROFILE("MTFDecoder::decodeBlock");
         if(in->compressedDataEnding()) return;
@@ -204,31 +174,25 @@ namespace bwtc {
 
         if(m_decoder=='F') {
             rle=false;
-        } else if(m_decoder=='f') {
+        } else if(m_decoder=='f'||m_decoder=='0') {
             rle=true;
             maxval=255;
             minrun=3;
-        } 
+        }
 
         block.readHeader(in);
         std::vector<byte> data;
         int extra=0;
-        std::vector<int> runs;
-        if(rle) runs=readRLE(in,extra);
+        std::vector<uint64> runs;
+        if(rle) runs=readRLE(in,extra,m_decoder);
 
         in->flushBuffer();
         HuffmanUtilDecoder huffman;
         huffman.decodeBlock(data,in);
         block.setSize(data.size()+extra);
 
-        Node* start=new Node(0);
-        Node* curr=start;
-        Node* prevnode;
-        for(int i=1;i<=0xff;i++) {
-            curr->next=new Node(i);
-            curr=curr->next;
-        }
-        curr->next=NULL;
+        //initialize rank list
+        for(int i=0;i<=0xff;i++) m_rankList.push_back(i);
 
         byte* block_ptr=block.begin();
 
@@ -239,12 +203,7 @@ namespace bwtc {
         int wrote=0;
         for(int i=0;i<data.size();i++) {
             byte rank = data[i];
-            curr=start;
-            for(int j=0;j<rank;j++) {
-                prevnode=curr;
-                curr=curr->next;
-            }
-            byte temp = curr->val;
+            byte temp = m_rankList[rank];
             wrote++;
             *(block_ptr++) = temp;
             if(rle) {
@@ -261,12 +220,15 @@ namespace bwtc {
                     }
                 }
             }
-            if(rank==0) continue;
-            prevnode->next=curr->next;
-            curr->next=start;
-            start=curr;
+
+            for(int pos=rank-1;pos>=0;pos--) {
+                m_rankList[pos+1]=m_rankList[pos];
+            }
+
+            m_rankList[0]=temp;
         }
     }
+
     MTFDecoder::MTFDecoder(char decoder) : m_decoder(decoder) {}
 
     MTFDecoder::~MTFDecoder() {}
