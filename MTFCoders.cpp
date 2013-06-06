@@ -140,7 +140,6 @@ namespace bwtc {
         size_t a=bytes_used;
         if(rle) data= RLE(block.begin(),block.size(),maxval,minrun,out,bytes_used,m_encoder);
         else data=std::vector<byte>(block.begin(),block.end());
-        std::cout<<"bytes used for rle: "<<bytes_used-a<<"\n";
         int pos;
         for(int  i = 0;i!=data.size();i++) {
             curr=start;
@@ -157,8 +156,16 @@ namespace bwtc {
             start=curr;
 
         }
+
+ /*       long ppos = out->getPos();
+        for(int i=0;i<6;i++) out->writeByte(0);
+        out->write48bits(data.size(),ppos);
+        bytes_used+=6;*/
         HuffmanUtilEncoder huffman;
+        out->flush();
         bytes_used+=huffman.encode(data.data(),data.size(),out);
+ //       bytes_used+=utils::gammaEncode(data,out,1);
+        out->flush();
         return bytes_used;
     }
 
@@ -188,10 +195,19 @@ namespace bwtc {
 
         in->flushBuffer();
         HuffmanUtilDecoder huffman;
+
+
+ /*       long ppos=in->pos;
+        int l = in->read48bits();
+        in->flushBuffer();
+        data.resize(l);
+        utils::gammaDecode(data,in,1);*/
         huffman.decodeBlock(data,in);
+        in->flushBuffer();
         block.setSize(data.size()+extra);
 
         //initialize rank list
+        m_rankList.clear();
         for(int i=0;i<=0xff;i++) m_rankList.push_back(i);
 
         byte* block_ptr=block.begin();
