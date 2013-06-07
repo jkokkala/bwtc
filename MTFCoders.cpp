@@ -135,7 +135,6 @@ namespace bwtc {
             maxval=255;
             minrun=3;
         } 
-        minrun = m_encoder - '0' + 1;
         std::vector<byte> data;
         size_t a=bytes_used;
         if(rle) data= RLE(block.begin(),block.size(),maxval,minrun,out,bytes_used,m_encoder);
@@ -186,7 +185,6 @@ namespace bwtc {
             maxval=255;
             minrun=3;
         }
-        minrun = m_decoder - '0' + 1;
 
         block.readHeader(in);
         std::vector<byte> data;
