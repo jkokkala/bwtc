@@ -437,14 +437,14 @@ void printBitRepresentation(Integer word) {
 } 
 
 template<typename Integer>
-inline size_t gammaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
+inline size_t gammaEncode(std::vector<Integer>& ints, bwtc::OutStream* out,int offset=0) {
     size_t bytes_used=0;
     out->flush();
 
     bwtc::uint64 buffer = 0;
     bwtc::int32 bitsInBuffer = 0;
     for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
-        bwtc::uint64 num=ints[k];
+        bwtc::uint64 num=ints[k]+offset;
         int gammaCodeLen = utils::logFloor(num) * 2 + 1;
         while (bitsInBuffer + gammaCodeLen > 64) {
             bitsInBuffer -= 8;
@@ -468,31 +468,31 @@ inline size_t gammaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
     return bytes_used;
 }
 template<typename Integer>
-inline void gammaDecode(std::vector<Integer>& ints, bwtc::InStream* in) {
+inline void gammaDecode(std::vector<Integer>& ints, bwtc::InStream* in, int offset=0) {
         for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
 
             int zeros = 0;
 
             while (!in->readBit())
                 ++zeros;
-            Integer value = 0;        
+            bwtc::uint64 value = 0;        
             for (bwtc::int32 t = 0; t < zeros; ++t) {
                 bwtc::int32 bit = in->readBit();
                 value = (value << 1) | bit;
             }
             value |= (1 << zeros);
-            ints[k] = value;
+            ints[k] = (Integer)(value-offset);
         }
 }
 template<typename Integer>
-inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
+inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out, int offset=0) {
     size_t bytes_used=0;
     out->flush();
 
     bwtc::uint64 buffer = 0;
     bwtc::int32 bitsInBuffer = 0;
     for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
-        bwtc::uint64 n=ints[k];
+        bwtc::uint64 n=ints[k]+offset;
         int codelength = logFloor(n)+2*logFloor(logFloor(n)+1UL)+1;
         uint64 len = logFloor(n)+1;
         uint64 lenoflen = logFloor(len);
@@ -523,14 +523,14 @@ inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out) {
     return bytes_used;
 }
 template<typename Integer>
-inline void deltaDecode(std::vector<Integer>& ints, bwtc::InStream* in) {
+inline void deltaDecode(std::vector<Integer>& ints, bwtc::InStream* in, int offset=0) {
         for (bwtc::uint64 k = 0; k < ints.size(); ++k) {
 
             int zeros = 0;
 
             while (!in->readBit())
                 ++zeros;
-            Integer value = 0;        
+            bwtc::uint64 value = 0;        
             for (bwtc::int32 t = 0; t < zeros; ++t) {
                 bwtc::int32 bit = in->readBit();
                 value = (value << 1) | bit;
@@ -540,13 +540,13 @@ inline void deltaDecode(std::vector<Integer>& ints, bwtc::InStream* in) {
             
             // read value-1 bits
             
-            Integer val2=1;
+            bwtc::uint64 val2=1;
             for(bwtc::int32 t=0;t<value-1;t++) {
                 bwtc::int32 bit = in->readBit();
                 val2=(val2<<1)|bit;
                 
             }
-            ints[k]=val2;
+            ints[k]=(Integer)(val2-offset);
         }
 }
 

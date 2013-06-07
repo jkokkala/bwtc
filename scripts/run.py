@@ -10,7 +10,11 @@ from matplotlib.backends.backend_pdf import PdfPages
 #bwtc path
 os.chdir(path)
 
-encoders = {"Huffman":"H","Wavelet": "W", "MTF":"F", "Gamma-RLE-MTF":"0", "Delta-RLE-MTF":"f"}
+#encoders = {"Huffman":"H","Wavelet": "W", "MTF":"F", "Gamma-RLE-MTF":"0", "Delta-RLE-MTF":"f","Gamma-RLE-MTF1":"f",}
+encoders = {}
+for a in range(0,10):
+    ch=chr(ord('0')+a)
+    encoders["mtf"+ch]=ch
 #encoders = {"Huffman":"H","MTF":"F", "MTFRL":"f"}
 preprocessors = ["pp"]
 inputs= {"XML50M":"inputs/dblp.xml.50MB","DNA50M":"inputs/dna.50MB","English50M":"inputs/english.50MB","Wiki50M":"inputs/enwik8.50MB","Kernel50M":"inputs/sources.50MB","Einstein.en.50M":"inputs/einstein.en.50MB","Kernel50M":"inputs/kernel.50MB"}
@@ -115,7 +119,8 @@ for plottype in plotdata:
 
     it=0
     mx=0
-    for enc in encoders:
+    for enc_ in sorted(encoders.iteritems()):
+        enc=enc_[0]
 
         legend.append(enc)
         entries = [e for e in data_entries if e["encoder"]==enc]

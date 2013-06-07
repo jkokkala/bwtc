@@ -70,6 +70,7 @@ void validateStartingPoints(uint32 sp) {
 
 /* Notifier function for encoding option choice */
 void validateEncodingOption(char c) {
+    return;
   if (c == 'H' || c == 'm' || c == 'M' || c == 'u' || c == 'b' || c == 'B' || c=='T' || c=='W' || c=='f' || c=='F' || c=='0'
       /* || c == <other option> */) return;
 

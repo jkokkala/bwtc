@@ -30,7 +30,7 @@ def get_times(output,algs):
 
 def delete_file(filename):
     os.remove(filename)
-colors=["r","y","g","b","m","c","k"]
+colors=["r","y","g","b","m","c","k","#ff0077","#7700ff","#ffff33","#3377FF"]
 coloriter=0
 def getcolor():
     global coloriter
