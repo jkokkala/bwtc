@@ -465,6 +465,7 @@ inline size_t gammaEncode(std::vector<Integer>& ints, bwtc::OutStream* out,int o
         out->writeByte(buffer & 0xff);
         ++bytes_used;
     }
+    out->flush();
     return bytes_used;
 }
 template<typename Integer>

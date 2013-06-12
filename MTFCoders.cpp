@@ -23,7 +23,7 @@
  *
  * Implementations of MTF encoder and decoder.
  */
-
+#include "ArithmeticUtil.hpp"
 #include <cassert>
 #include <cstdio>
 #include <ctime>
@@ -84,24 +84,17 @@ namespace bwtc {
         for(int i=0;i<6;i++) out->writeByte(0);
         out->write48bits(runlengths.size(),pos);
         bytes_used+=6;
-        if(encoder=='f') {
-            bytes_used += utils::deltaEncode(runlengths,out);
-        }
-        else {
-            bytes_used+= utils::gammaEncode(runlengths,out);
-        }
+        bytes_used+= utils::gammaEncode(runlengths,out);
         out->flush();
 
         return data;
     }
-    
+
     std::vector<uint64> MTFDecoder::readRLE(InStream* in, int& extra, char decoder) {
         int num_runs= in->read48bits();
         std::vector<uint64> runs(num_runs);
         extra=0;
-        if(decoder=='f')
-        utils::deltaDecode(runs,in);
-        else utils::gammaDecode(runs,in);
+        utils::gammaDecode(runs,in);
         for (uint64 k = 0; k < num_runs; ++k) {
             extra += runs[k] -1;
         }
@@ -128,9 +121,9 @@ namespace bwtc {
         bool rle=true;
         byte maxval=255;
         int minrun=1;
-        if(m_encoder=='F') {
+        if(m_encoder=='F' || m_encoder=='A') {
             rle=false;
-        } else if(m_encoder=='f'||m_encoder=='0') {
+        } else  {
             rle=true;
             maxval=255;
             minrun=3;
@@ -156,19 +149,21 @@ namespace bwtc {
 
         }
 
- /*       long ppos = out->getPos();
-        for(int i=0;i<6;i++) out->writeByte(0);
-        out->write48bits(data.size(),ppos);
-        bytes_used+=6;*/
+        /*       long ppos = out->getPos();
+                 for(int i=0;i<6;i++) out->writeByte(0);
+                 out->write48bits(data.size(),ppos);
+                 bytes_used+=6;*/
         HuffmanUtilEncoder huffman;
+        ArithmeticUtilEncoder arithmetic(out);
         out->flush();
-        bytes_used+=huffman.encode(data.data(),data.size(),out);
- //       bytes_used+=utils::gammaEncode(data,out,1);
+        if(m_encoder=='A'  || m_encoder=='a')  bytes_used+=arithmetic.encode(data.data(),data.size());
+        else bytes_used+=huffman.encode(data.data(),data.size(),out);
+        //       bytes_used+=utils::gammaEncode(data,out,1);
         out->flush();
         return bytes_used;
     }
 
- void MTFDecoder::decodeBlock(BWTBlock& block, InStream* in) {
+    void MTFDecoder::decodeBlock(BWTBlock& block, InStream* in) {
 
         PROFILE("MTFDecoder::decodeBlock");
         if(in->compressedDataEnding()) return;
@@ -178,9 +173,9 @@ namespace bwtc {
         byte maxval=255;
         int minrun=1;
 
-        if(m_decoder=='F') {
+        if(m_decoder=='F'|| m_decoder=='A') {
             rle=false;
-        } else if(m_decoder=='f'||m_decoder=='0') {
+        } else  {
             rle=true;
             maxval=255;
             minrun=3;
@@ -194,6 +189,7 @@ namespace bwtc {
 
         in->flushBuffer();
         HuffmanUtilDecoder huffman;
+        ArithmeticUtilDecoder arithmetic(in);
 
 
  /*       long ppos=in->pos;
@@ -201,7 +197,10 @@ namespace bwtc {
         in->flushBuffer();
         data.resize(l);
         utils::gammaDecode(data,in,1);*/
-        huffman.decodeBlock(data,in);
+ 
+        
+        if(m_decoder=='A' || m_decoder=='a') arithmetic.decode(data);
+        else huffman.decodeBlock(data,in);
         in->flushBuffer();
         block.setSize(data.size()+extra);
 

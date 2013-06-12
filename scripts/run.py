@@ -10,14 +10,13 @@ from matplotlib.backends.backend_pdf import PdfPages
 #bwtc path
 os.chdir(path)
 
-#encoders = {"Huffman":"H","Wavelet": "W", "MTF":"F", "Gamma-RLE-MTF":"0", "Delta-RLE-MTF":"f","Gamma-RLE-MTF1":"f",}
-encoders = {}
-for a in range(0,10):
-    ch=chr(ord('0')+a)
-    encoders["mtf"+ch]=ch
+#encoders = {"Huffman":"H","Wavelet": "W", "MTF":"F", "Gamma-RLE-MTF":"0", "Delta-RLE-MTF":"f",}
+encoders = {"Arithm": "m", "Huffman":"H","Wavelet": "W", "MTF-Huffman":"F","RLEMTF-Huffman":"f","MTF-Arithm":"A","RLEMTF-Arithm":"a","new":"f"}
+encoders = {"Arithm2": "m", "Arithm":"m","Huffman":"H"}
 #encoders = {"Huffman":"H","MTF":"F", "MTFRL":"f"}
 preprocessors = ["pp"]
 inputs= {"XML50M":"inputs/dblp.xml.50MB","DNA50M":"inputs/dna.50MB","English50M":"inputs/english.50MB","Wiki50M":"inputs/enwik8.50MB","Kernel50M":"inputs/sources.50MB","Einstein.en.50M":"inputs/einstein.en.50MB","Kernel50M":"inputs/kernel.50MB"}
+#inputs= {"English50M":"inputs/english.50MB"}
 comp_algs = ["precompress","doTransform","encodeData"]
 decomp_algs=["uncompress","doTransform","decodeBlock"]
 #inputs={"Wiki":"inputs/wiki"}

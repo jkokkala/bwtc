@@ -49,8 +49,17 @@ namespace bwtc {
     HuffmanUtilEncoder::~HuffmanUtilEncoder() {}
     size_t HuffmanUtilEncoder::
         encode(byte* data, uint64 size, OutStream* out) {
+            
             std::vector<uint32> context_lengths(256, 0);
-            context_lengths[0]=size;
+
+            int a = 256;
+            while(size/a < 30000 && a>1) {
+                a/=2;
+            }
+
+            for(int i=0;i<a;i++) context_lengths[i]=size/a;
+            context_lengths[0] += size % a;
+
             writeBlockHeader(context_lengths, out);
             encodeData(data, context_lengths, size, out);
             finishBlock(out);

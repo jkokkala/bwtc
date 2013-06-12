@@ -353,6 +353,9 @@ void HuffmanDecoder::decodeBlock(BWTBlock& block, InStream* in) {
 
   std::vector<uint64> context_lengths;
   uint64 compr_len = readBlockHeader(block, &context_lengths, in);
+  std::cout<<"contexts: ";
+  for(int i=0;i<context_lengths.size();i++) std::cout<<context_lengths[i]<<" ";
+  std::cout<<"\n";
 
   if (verbosity > 2) {
     std::clog << "Size of compressed block = " << compr_len << "\n";
