@@ -28,12 +28,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
+#include "IFCoders.hpp"
 #include "EntropyCoders.hpp"
 #include "WaveletCoders.hpp"
 #include "HuffmanCoders.hpp"
 #include "ArithmeticCoders.hpp"
 #include "MTFCoders.hpp"
+#include "InterpolativeCoders.hpp"
 namespace bwtc {
 
 EntropyEncoder*
@@ -57,7 +58,11 @@ giveEntropyEncoder(char encoder) {
       std::clog << "Using Arithmetic encoder\n";
     }
     return new ArithmeticEncoder();
-  }
+  } else if(encoder=='i') {
+    return new InterpolativeEncoder();
+  } else if(encoder=='G') {
+    return new IFEncoder();
+  } 
   else {
     if(verbosity > 1) {
       std::clog << "Using MTF encoder\n";
@@ -84,6 +89,12 @@ EntropyDecoder* giveEntropyDecoder(char decoder) {
     }
     return new ArithmeticDecoder();
   }
+   else if(decoder=='i') {
+    return new InterpolativeDecoder();
+  }
+   else if(decoder=='G') {
+    return new IFDecoder();
+  } 
 
   else {
     if(verbosity > 1) {

@@ -81,10 +81,12 @@ size_t Decompressor::decompress(size_t threads) {
       pb->usedAtEnd(pb->getSlice(i).size());
       ibwt->doTransform(pb->getSlice(i));
     }
+    std::cout<<"STUFF DONE\n";
     // Postprocess pb
     Postprocessor postprocessor(verbosity > 1, pb->grammar());
     size_t postSize = postprocessor.uncompress(pb->begin(), pb->size(), m_out);
     decompressedSize += postSize;
+    std::cout<<"STUFF DONE2\n";
     //m_out->writeBlock(pb->begin(), pb->end());
     assert(postSize == pb->originalSize());
     delete pb;

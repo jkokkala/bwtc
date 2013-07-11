@@ -264,9 +264,9 @@ void HuffmanUtilDecoder::decodeBlock(std::vector<byte>& data, InStream* in) {
     std::vector<uint64> context_lengths;
     uint64 compr_len = readBlockHeader(&context_lengths, in);
 
-    if (verbosity > 2) {
+ /*   if (verbosity > 2) {
         std::clog << "Size of compressed block = " << compr_len << "\n";
-    }
+    }*/
 
     uint64 block_size = std::accumulate(
             context_lengths.begin(), context_lengths.end(), static_cast<uint64>(0));
@@ -513,8 +513,8 @@ void HuffmanUtilDecoder::decodeBlock(std::vector<byte>& data, InStream* in) {
                 ++runseq_ptr;
             }
         }
-
-
+    
+        delete[] runseq;
     }
 
     uint64 HuffmanUtilDecoder::readPackedInteger(InStream* in) {

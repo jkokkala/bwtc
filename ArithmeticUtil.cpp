@@ -82,7 +82,8 @@ namespace bwtc {
             bytes_used++;
             bits_used+=8;
         }
-        std::cout<<"bytes used for counts: "<<1.0*(pp-a)/(bytes_used-a)<<"\n";
+        //std::cout<<"bytes used for counts: "<<1.0*(pp-a)/(bytes_used-a)<<"\n";
+        std::cout<<"bytes used for counts: "<<(pp-a)<<"\n";
         
         out->write48bits(bits_used/8,bits_pos);
         return bytes_used;

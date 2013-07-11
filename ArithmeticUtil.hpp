@@ -9,7 +9,7 @@
  */
 #ifndef ARITHMETHICUTIL_HPP
 #define ARITHMETHICUTIL_HPP
-#define SCALE   ((1ULL<<28)-1)  /* Maximum allowed frequency count */
+#define SCALE   ((1ULL<<30)-1)  /* Maximum allowed frequency count */
 #define ESCAPE          256    /* The escape symbol               */
 #define DONE            -1     /* The output stream empty  symbol */
 #define FLUSH           -2     /* The symbol to flush the model   */

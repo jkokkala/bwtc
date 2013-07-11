@@ -31,12 +31,13 @@
 
 #include <cassert>
 #include <cstdlib>
-
+#include<iostream>
 namespace bwtc {
 
 PrecompressorBlock::PrecompressorBlock(size_t size)
     : m_data((byte*)malloc(sizeof(byte)*(size+1))), m_used(0),
-      m_originalSize(size), m_reserved(size+1) {}
+      m_originalSize(size), m_reserved(size+1) {
+      }
 
 PrecompressorBlock::PrecompressorBlock(size_t maxSize, InStream* in)
     : m_data((byte*)malloc(sizeof(byte)*(maxSize+1))), m_used(0),

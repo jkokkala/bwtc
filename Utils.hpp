@@ -484,6 +484,7 @@ inline void gammaDecode(std::vector<Integer>& ints, bwtc::InStream* in, int offs
             value |= (1 << zeros);
             ints[k] = (Integer)(value-offset);
         }
+        in->flushBuffer();
 }
 template<typename Integer>
 inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out, int offset=0) {
@@ -521,6 +522,7 @@ inline size_t deltaEncode(std::vector<Integer>& ints, bwtc::OutStream* out, int 
         out->writeByte(buffer & 0xff);
         ++bytes_used;
     }
+    out->flush();
     return bytes_used;
 }
 template<typename Integer>

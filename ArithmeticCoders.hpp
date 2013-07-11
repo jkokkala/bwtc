@@ -45,8 +45,7 @@ class ArithmeticEncoder : public EntropyEncoder {
   ArithmeticEncoder();
   ~ArithmeticEncoder();
 
-  size_t transformAndEncode(BWTBlock& block, BWTManager& bwtm,
-                            OutStream* out);
+  size_t transformAndEncode(BWTBlock& block, BWTManager& bwtm,OutStream* out);
   
   void encodeData(const byte* data, const std::vector<uint32>& stats,
                   uint32 blockSize, OutStream* out);

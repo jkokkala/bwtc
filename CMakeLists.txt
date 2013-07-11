@@ -20,7 +20,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE MATCHES Release)
   add_definitions(-DNDEBUG)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fomit-frame-pointer")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -pg")#-fomit-frame-pointer")
 elseif(CMAKE_BUILD_TYPE MATCHES Debug)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fno-inline")
 endif()
@@ -29,7 +29,7 @@ set(EXECUTABLE_OUTPUT_PATH bin/)
 set(OBJECT_FILE_PATH ${bwtc_SOURCE_DIR}/${EXECUTABLE_OUTPUT_PATH})
 
 set(COMMON_SRC BitCoders.cpp Utils.cpp Streams.cpp 
-    WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp MTFCoders.cpp HuffmanUtil.cpp ArithmeticUtil.cpp ArithmeticCoders.cpp
+    WaveletCoders.cpp EntropyCoders.cpp HuffmanCoders.cpp PrecompressorBlock.cpp MTFCoders.cpp HuffmanUtil.cpp ArithmeticUtil.cpp ArithmeticCoders.cpp InterpolativeCoders.cpp IFCoders.cpp
   BWTBlock.cpp)
 add_library(common ${COMMON_SRC})
 
@@ -49,6 +49,7 @@ set(COMPRESSOR_SRC compress.cpp  Compressor.cpp)
 set(DECOMPRESSOR_SRC uncompress.cpp Decompressor.cpp)
 set(PREPROCESSOR_SRC preprocess.cpp)
 set(POSTPROCESSOR_SRC postprocess.cpp)
+set(TEST_SRC test.cpp)
 
 link_directories(${Boost_LIBRARY_DIR})
 include_directories(${Boost_INCLUDE_DIR})
@@ -69,6 +70,9 @@ add_executable(postprocess ${POSTPROCESSOR_SRC})
 target_link_libraries(postprocess common preprocessors 
   ${Boost_LIBRARIES})
 
+add_executable(test ${TEST_SRC})
+target_link_libraries(test common preprocessors probmodels bwtransforms
+  ${Boost_LIBRARIES})
 #enable_testing()
 
 set(CMAKE_BUILD_TYPE Debug)

@@ -41,6 +41,7 @@
 #include "Utils.hpp"
 #include "Profiling.hpp"
 #include "ArithmeticUtil.hpp"
+using namespace std;
 namespace bwtc {
 
     ArithmeticEncoder::ArithmeticEncoder()
@@ -50,35 +51,39 @@ namespace bwtc {
         
     size_t ArithmeticEncoder::
         transformAndEncode(BWTBlock& block, BWTManager& bwtm, OutStream* out) {
+            std::cout<<block.size()<<"\n";
             bool rle=true;
             bwtm.doTransform(block);
             PROFILE("ArithmeticEncoder::encodeData");
             size_t bytes_used=block.writeHeader(out);
             int maxval=255;
-            int minrun=3;
-
+            int minrun=1;
+            
             uint64 size=block.size();
             std::vector<uint32> context_lengths(256, 0);
+            for(int i=0;i<block.size();i++) context_lengths[block.begin()[i]]++;
             int a = 256;
-            while(size/a < 1000000 && a>1) {
+ /*           while(size/a < 1000000 && a>1) {
                 a/=2;
             }
             
             for(int i=0;i<a;i++) context_lengths[i]=size/a;
             context_lengths[0] += size % a;
-
+*/          
             out->writeByte(a>>8);
             out->writeByte(a&0xff);
             bytes_used+=2;
+            bytes_used+=utils::gammaEncode(context_lengths,out,1);
 
 
             byte* ptr=block.begin(); 
             for(int i=0;i<a;i++) {
+                if(context_lengths[i]==0) continue;
                 out->flush();
                 long p=out->getPos();
                 std::vector<byte> data;
                 if(rle) data= RLE(ptr,context_lengths[i],maxval,minrun,out,bytes_used);
-                else data=std::vector<byte>(block.begin(),block.end());
+                else data=std::vector<byte>(ptr,ptr+context_lengths[i]);
                 ArithmeticUtilEncoder encoder(out);
                 HuffmanUtilEncoder huffman;
 //                bytes_used +=huffman.encode(data.data(),data.size(),out);
@@ -101,12 +106,14 @@ namespace bwtc {
         if(in->compressedDataEnding()) return;
         block.readHeader(in);
 
-        std::vector<uint64> context_lengths;
+        std::vector<uint64> context_lengths(256);
 
         byte* ptr = block.begin();
         int size=0;
         int count=(in->readByte()<<8)|in->readByte();
+        utils::gammaDecode(context_lengths,in,1);
         for(int i=0;i<count;i++) {
+            if(context_lengths[i]==0) continue;
             in->flushBuffer();
             long p=in->pos;
             std::vector<byte> data;
