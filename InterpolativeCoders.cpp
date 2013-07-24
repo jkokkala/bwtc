@@ -11,7 +11,7 @@ namespace bwtc {
         PROFILE("InterpolativeEncoder::encodeData");
         bytes_used=block.writeHeader(out);
         vector<byte> data;
-        if(IP_RLE) data= RLE(block.begin(),block.size(),255,1,out,bytes_used);
+        if(IP_RLE) data= RLE(block.begin(),block.size(),255,MIN_RLE_RUN,out,bytes_used);
         else data=vector<byte>(block.begin(),block.begin()+block.size());
         encode(data);
 
@@ -32,7 +32,7 @@ namespace bwtc {
             }
             return ret;
         }
-        // else binary search the number of occurrences in T[a..b] for each character i by using index[i]
+        // else binary search the number of occurrences in T[a..b] for each character j by using index[j]
         int start,end;
         for(int i=0;i<bytes.size();i++) {
             vector<int>& v = index[bytes[i]];
@@ -49,7 +49,7 @@ namespace bwtc {
                     if(v[start]>=a) break;
                 }
                 // last occurrence
-                low=0;high=v.size()-1;
+                low=start;high=v.size()-1;
                 while(low+1<high) {
                     int mid=(low+high)/2;
                     if(v[mid]>b) high=mid;
@@ -95,12 +95,11 @@ namespace bwtc {
         out->flush();
     }
 
-    void InterpolativeEncoder::encode_recursive(int index, int size, freq& freqs) {
-        
+    void InterpolativeEncoder::encode_recursive(int index, uint32 size, freq& freqs) {
         if(freqs.size()==1) {
             return;
         } 
-        if(IP_RLE && freqs.size()==2) {
+        if(IP_RLE && MIN_RLE_RUN==1 && freqs.size()==2) {
             if(size%2 ==1) return;
             if(block_begin[index]<block_begin[index+1]) output_bit(0);
             else output_bit(1);
@@ -112,7 +111,9 @@ namespace bwtc {
             else output_bit(1);
             return;
         }
-        int half = size/2;
+
+        int half  = size/2;
+
         freq lfreq=ranged_freq(index,index+half-1,freqs.bytes);
         output(lfreq,freqs,half);
         for(int i=0;i<freqs.size();i++) freqs[i]-=lfreq[i];
@@ -139,9 +140,8 @@ namespace bwtc {
         //encode the other frequencies
         for(int i=0;i<values.size();i++) {
             if(i==maxi) continue; // skip the one with maximum frequency in parent
-            int bits=utils::logFloor(shape[i])+1; // number of bits needed to encode any number between 0 and shape[i] 
-
-            output_bits(values[i],bits);
+            
+            output_num(values[i],sum<shape[i]?sum:shape[i]);
            sum-=values[i];
            if(sum==0) return; // if the rest of the list is guaranteed to be 0s, skip
         }
@@ -156,7 +156,7 @@ namespace bwtc {
         std::vector<uint64> runs;
         if(IP_RLE)runs=readRLE(in,extra);
 
-        int minrun=1;
+        int minrun=MIN_RLE_RUN;
         int maxval=255;
         freq total(256);
         int size=0;
@@ -231,7 +231,10 @@ namespace bwtc {
         for(int i=0;i<freqs.size();i++) 
         {
             if(sum==0) freqs[i]=0; // if the rest of the list is guaranteed to be 0s, skip
-            else if(i!=maxi) sum-=freqs[i]=input_bits(utils::logFloor(shape[i])+1); // read freqs[i] unless shape[i] is the maximum
+            else if(i!=maxi) {
+                sum -= freqs[i] = input_num(sum<shape[i]? sum : shape[i]);
+//                sum-=freqs[i]=input_bits(utils::logFloor(shape[i])+1); // read freqs[i] unless shape[i] is the maximum
+            }
         }
 
         freqs[maxi]=sum; // the maximum value is [size of string - sum of other frequencies]
@@ -239,7 +242,7 @@ namespace bwtc {
 
 
     // recursively decode T[index .. index+size) given frequencies
-    void InterpolativeDecoder::decode_recursive(int index, int size, freq& freqs) {
+    void InterpolativeDecoder::decode_recursive(int index, uint32 size, freq& freqs) {
         assert(size>0);
         if(size==1) {
             for(int i=0;i<freqs.size();i++) {
@@ -257,7 +260,7 @@ namespace bwtc {
         }  
 
         // if using RLE and input consists of two characters, the input can only be 01010, 10101, 0101 or 1010 etc.
-        if(IP_RLE && freqs.size()==2) {
+        if(IP_RLE && MIN_RLE_RUN==1 && freqs.size()==2) {
             int a;
             if(size%2 ==1) {
                 if(freqs[0]>freqs[1]) a=0;
@@ -269,7 +272,7 @@ namespace bwtc {
             return;
         }
         
-        // slight optimization: if the length of the string is 2, stop the recursion
+        // small optimization: if the length of the string is 2, stop the recursion
         if(size==2) {
             int a = in->readBit();
             output[index]=freqs.bytes[a];
@@ -277,8 +280,8 @@ namespace bwtc {
             return;
         }
 
+        int half  = size/2;
 
-        int half=size/2; //size of the left part
 
         freq lfreq=freqs; //initialize left part
         input(lfreq,freqs,half); //input left part
@@ -382,6 +385,39 @@ namespace bwtc {
         }
         while(n --> 0) num=(num<<1)|in->readBit();
         return num;
+    }
+
+
+    void InterpolativeEncoder::output_num(int num, uint32 r){
+        int bits = utils::logFloor(r)+1;
+        int mx = (1<<bits)-1;
+        int wast = mx - r ;
+        int longer = r - wast + 1;
+        int offset = longer/2;
+        num = (num - offset+ r + 1)%(r+1);
+        if(num < wast)
+            output_bits(num,bits-1);
+        else {
+            num = (((num-wast)/2 + wast)<<1) | ((num-wast)%2);
+            output_bits(num,bits);
+        }
+
+        
+    }
+
+    uint32 InterpolativeDecoder::input_num(uint32 r) {
+        int bits = utils::logFloor(r)+1;
+        int mx = (1<<bits)-1;
+        int wast = mx - r ;
+        int longer = r - wast + 1;
+        int offset = longer/2;
+        int n = input_bits(bits-1);
+        uint32 num;
+        if(n<wast)
+            num = n;
+        else
+            num = (n-wast)*2+wast+input_bits(1);
+        return (num+offset)%(r+1);
     }
 }
 

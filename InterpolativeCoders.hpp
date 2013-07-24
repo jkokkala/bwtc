@@ -96,7 +96,7 @@ namespace bwtc {
             void output(freq& values, freq& shape, int sum);
             void rec_output(vector<int>& vec, vector<int>& shape, int a, int b);
     std::vector<byte> RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
-            void encode_recursive(int index, int size, freq& freqs);
+            void encode_recursive(int index, uint32 size, freq& freqs);
             OutStream* out;
             size_t bytes_used;
 
@@ -106,6 +106,7 @@ namespace bwtc {
 
             void output_bit(int bit);
             void output_bits(uint32 bits,int n);
+            void output_num(int num, uint32 mx);
             int bitsInBuffer;
             uint64 buffer;
             int tmpp;
@@ -115,8 +116,9 @@ namespace bwtc {
         public:
             InterpolativeDecoder() {}
             void decodeBlock(BWTBlock& block, InStream* in);
-            void decode_recursive(int index, int size, freq& freqs);
+            void decode_recursive(int index, uint32 size, freq& freqs);
             void input(freq& f, freq& shape, int sum);
+            uint32 input_num(uint32 mx);
             void rec_input(freq& f, vector<int>& shape, int a, int b, int sum);
             vector<uint64> readRLE(InStream* in, int& extra);
             InStream* in;
@@ -125,5 +127,6 @@ namespace bwtc {
 
     };
     const bool IP_RLE=true;
+    const int MIN_RLE_RUN=3;
 }
 #endif
