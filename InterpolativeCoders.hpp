@@ -89,7 +89,8 @@ namespace bwtc {
     class InterpolativeEncoder : public EntropyEncoder {
 
         public:
-            InterpolativeEncoder() : bytes_used(0) {} 
+            InterpolativeEncoder() : bytes_used(0) {
+            } 
             size_t transformAndEncode(BWTBlock& block, BWTManager& bwtm,OutStream* out);
             void encode(vector<byte>& block);
             freq ranged_freq(uint32 a, uint32 b,vector<byte>& bytes);
@@ -114,7 +115,8 @@ namespace bwtc {
 
     class InterpolativeDecoder : public EntropyDecoder {
         public:
-            InterpolativeDecoder() {}
+            InterpolativeDecoder() {
+            }
             void decodeBlock(BWTBlock& block, InStream* in);
             void decode_recursive(int index, uint32 size, freq& freqs);
             void input(freq& f, freq& shape, int sum);
@@ -126,7 +128,18 @@ namespace bwtc {
             uint32 input_bits(int n);
 
     };
-    const bool IP_RLE=true;
-    const int MIN_RLE_RUN=3;
+    const bool IP_RLE=false;
+    const int MIN_RLE_RUN=1;
+    const int MAX_DYN=16;
+    static int F_dyn[MAX_DYN][MAX_DYN];
+    static void F_init() {
+        for(int i=0;i<MAX_DYN;i++) for(int j=0;j<MAX_DYN;j++) {
+            if(i==0 || j==0) F_dyn[i][j]=1;
+            else F_dyn[i][j]=F_dyn[i-1][j]+F_dyn[i][j-1];
+        }
+    }
+    static int F(int a, int b) {
+        return F_dyn[a][b];
+    }
 }
 #endif

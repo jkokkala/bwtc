@@ -4,6 +4,7 @@
 using namespace std;
 namespace bwtc {
     size_t InterpolativeEncoder::transformAndEncode(BWTBlock& block, BWTManager& bwtm,OutStream* out) {
+        F_init();
         bitsInBuffer=0;
         buffer=0;
         this->out=out;
@@ -111,6 +112,27 @@ namespace bwtc {
             else output_bit(1);
             return;
         }
+        if(!IP_RLE && freqs.size()==2 && (size < MAX_DYN || (freqs[0]<MAX_DYN&&freqs[1]<MAX_DYN)) && ((freqs[0]*1.0/size)<0.35 || (freqs[0]*1.0/size)>0.65)) {
+            uint32 perm=0;
+            uint32 mx = F(freqs[0],freqs[1])-1;
+ /*           cout<<"Vanhemmat: ";
+            for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
+            cout<<"\n";*/
+            for(int i=index;i<index+size;i++) {
+
+                if(block_begin[i]==freqs.bytes[1]) {
+                    
+                    if(freqs[0]>0) perm += F(freqs[0]-1,freqs[1]);
+                    freqs[1]--;
+                } else freqs[0]--;
+            }
+            output_num(perm,mx);
+/*            cout<<"Permutaatio: "<<perm<<"/"<<mx<<"\n";
+            cout<<"Tulos: ";
+            for(int i=index;i<index+size;i++) cout<<block_begin[i];
+            cout<<"\n";*/
+            return;
+        }
 
         int half  = size/2;
 
@@ -149,6 +171,7 @@ namespace bwtc {
 
     void InterpolativeDecoder::decodeBlock(BWTBlock& block, InStream* in) {
         PROFILE("InterpolativeEncoder::decodeBlock");
+        F_init();
         this->in=in;
         block.readHeader(in);
         int extra;
@@ -180,7 +203,7 @@ namespace bwtc {
             output=block.begin();
         }
         total.clean();
-
+    
 
         decode_recursive(0,size,total);
         in->flushBuffer();
@@ -209,8 +232,6 @@ namespace bwtc {
                 }
             }
         }
-
-
     }
 
 
@@ -232,7 +253,7 @@ namespace bwtc {
         {
             if(sum==0) freqs[i]=0; // if the rest of the list is guaranteed to be 0s, skip
             else if(i!=maxi) {
-                sum -= freqs[i] = input_num(sum<shape[i]? sum : shape[i]);
+                sum -= freqs[i] = input_num(sum< shape[i]? sum : shape[i]);
 //                sum-=freqs[i]=input_bits(utils::logFloor(shape[i])+1); // read freqs[i] unless shape[i] is the maximum
             }
         }
@@ -271,12 +292,41 @@ namespace bwtc {
             for(int i=0;i<size;i++) output[index+i]=freqs.bytes[(i&1)^a];
             return;
         }
-        
         // small optimization: if the length of the string is 2, stop the recursion
         if(size==2) {
             int a = in->readBit();
             output[index]=freqs.bytes[a];
             output[index+1]=freqs.bytes[1-a];
+            return;
+        }
+        
+        if(!IP_RLE && freqs.size()==2 && (size < MAX_DYN || (freqs[0]<MAX_DYN&&freqs[1]<MAX_DYN))&& ((freqs[0]*1.0/size)<0.35 || (freqs[0]*1.0/size)>0.65)) {
+           /* cout<<"Vanhemmat: ";
+            for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
+            cout<<"\n";*/
+            uint32 perm = input_num(F(freqs[0],freqs[1])-1);
+//            cout<<"Permutaatio: "<<perm<<"/"<<F(freqs[0],freqs[1])<<"\n";
+            for(int i=0;i<size;i++) {
+                if(freqs[0]==0) {
+                    output[index+i]=freqs.bytes[1];
+                    continue;
+                } else if(freqs[1]==0) {
+                    output[index+i]=freqs.bytes[0];
+                    continue;
+                }
+                if(F(freqs[0]-1,freqs[1]) <= perm) {
+                    perm -= F(freqs[0]-1,freqs[1]);
+                    freqs[1]--;
+                    output[index+i]=freqs.bytes[1];
+                } else {
+                    freqs[0]--;
+                    output[index+i]=freqs.bytes[0];
+                }
+               // cout<<"Laitetaan "<<output[index+i]<<", perm="<<perm<<"\n";
+            }
+ /*         cout<<"Tulos: ";
+            for(int i=0;i<size;i++) cout<<output[i+index];
+            cout<<"\n";*/
             return;
         }
 
