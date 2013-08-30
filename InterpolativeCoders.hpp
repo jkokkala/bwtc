@@ -12,78 +12,11 @@
 #include "Streams.hpp"
 #include "globaldefs.hpp"
 #include "EntropyCoders.hpp"
+#include "Utils.hpp"
+#include "InterpolativeCoderUtils.hpp"
 using namespace std;
 namespace bwtc {
-    struct freq {
-        vector<uint32> frequencies;
-        vector<byte> bytes;
-        vector<int> bytemap;
-        const int size() const { return frequencies.size();}
-        uint32& operator[](unsigned int i){ return frequencies[i];}
-        const uint32& operator[](unsigned int i)const{ return frequencies[i];}
-        freq() {}
-        freq(int s) { 
-            frequencies.resize(s,0);
-            bytes.resize(s,0);
-            bytemap.resize(256);
-            if(s==256) for(int i=0;i<s;i++) bytemap[i]=bytes[i]=i;
-        }
-
-        freq& operator=(const freq& other) {
-            if(this != &other) {
-                frequencies.resize(other.size());
-                bytes.resize(other.size());
-                bytemap.resize(other.bytemap.size());
-                for(int i=0;i<bytemap.size();i++) bytemap[i]=other.bytemap[i];
-                for(int i=0;i<other.size();i++) frequencies[i]=other[i];
-                for(int i=0;i<other.size();i++) bytes[i]=other.bytes[i];
-            }
-        }
-
-        freq & operator+=(const freq &other) {
-            for(int i=0;i<size();i++) frequencies[i]+=other[i];
-            return *this;
-        }
-        freq & operator-=(const freq &other) {
-            for(int i=0;i<size();i++) frequencies[i]+=other[i];
-            return *this;
-        }
-
-
-        const freq operator+(const freq& other) const {
-            freq a = freq(size());
-            for(int i=0;i<size();i++) {
-                a[i]=frequencies[i]+other[i];
-                a.bytes[i]=bytes[i];
-
-            }
-                a.bytemap.resize(other.bytemap.size());
-                for(int i=0;i<bytemap.size();i++) a.bytemap[i]=other.bytemap[i];
-            return a;
-        }
-        const freq operator-(const freq& other) const {
-            freq a = freq(size());
-            for(int i=0;i<size();i++) {
-                a[i]=frequencies[i]-other[i];
-                a.bytes[i]=bytes[i];
-            }
-                a.bytemap.resize(other.bytemap.size());
-                for(int i=0;i<bytemap.size();i++) a.bytemap[i]=other.bytemap[i];
-            return a;
-        }
-        void clean() {
-            vector<uint32> freq;
-            vector<byte> nbytes;
-
-            for(int i=0;i<size();i++) if(frequencies[i]>0) {
-                freq.push_back(frequencies[i]);
-                nbytes.push_back(bytes[i]);
-                bytemap[bytes[i]]=freq.size()-1;
-            }
-            frequencies=freq;
-            bytes=nbytes;
-        }
-    };
+    
 
 
     class InterpolativeEncoder : public EntropyEncoder {
@@ -103,7 +36,9 @@ namespace bwtc {
 
             byte* block_begin;
             vector<vector<int> > index;
-
+            vector<vector<int> > dynamic_mem_big;
+            vector<vector<int> > dynamic_mem_small;
+            int dynamic_mem_small_start,dynamic_mem_small_end;
 
             void output_bit(int bit);
             void output_bits(uint32 bits,int n);
@@ -111,6 +46,9 @@ namespace bwtc {
             int bitsInBuffer;
             uint64 buffer;
             int tmpp;
+
+            FreqMem* mem;
+            
     };
 
     class InterpolativeDecoder : public EntropyDecoder {
@@ -128,7 +66,7 @@ namespace bwtc {
             uint32 input_bits(int n);
 
     };
-    const bool IP_RLE=false;
+    const bool IP_RLE=true;
     const int MIN_RLE_RUN=1;
     const int MAX_DYN=16;
     static int F_dyn[MAX_DYN][MAX_DYN];
@@ -140,6 +78,12 @@ namespace bwtc {
     }
     static int F(int a, int b) {
         return F_dyn[a][b];
+    }
+
+    static int split(uint size) {
+        uint half = 1<<utils::logFloor(size);
+        if(size-half==0) return half>>1;
+        return half;
     }
 }
 #endif

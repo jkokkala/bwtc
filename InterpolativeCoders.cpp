@@ -2,6 +2,7 @@
 #include "Profiling.hpp"
 #include "Utils.hpp"
 using namespace std;
+const int dynamic_interval = 4096;
 namespace bwtc {
     size_t InterpolativeEncoder::transformAndEncode(BWTBlock& block, BWTManager& bwtm,OutStream* out) {
         F_init();
@@ -22,9 +23,14 @@ namespace bwtc {
 
     // compute the frequencies for characters given (bytes) in string T[a..b]
     freq InterpolativeEncoder::ranged_freq(uint32 a, uint32 b,vector<byte>& bytes) {
+        
+        return  mem->search(a,b,bytes);
         freq ret(bytes.size());
         for(int j=0;j<bytes.size();j++) ret.bytes[j]=bytes[j];
         for(int j=0;j<bytes.size();j++) ret.bytemap[bytes[j]]=j;
+        
+        
+
 
         // if the string is short enough (<M*logN), it is faster to just iterate over the string
         if(b-a<bytes.size()*utils::logFloor(b-a+1)) {
@@ -68,20 +74,29 @@ namespace bwtc {
         return ret;
     }
 
+
+
     void InterpolativeEncoder::encode(vector<byte>& block) {
         block_begin=block.data();
-
+/*
         //for each character i construct a sorted list of occurrences by index ( index[i] )
         index.clear();
         index.resize(256);
         for(int i=0;i<256;i++) index[i].reserve(block.size()/10);
         for(int i=0;i<block.size();i++) {
             index[block_begin[i]].push_back(i);
-        }
-
+        }*/
         //compute and encode total frequencies
         freq curr(256);
-        curr = ranged_freq(0,block.size()-1,curr.bytes);
+        mem=new FreqMem(block_begin,block.size());
+        curr=ranged_freq(0,block.size()-1,curr.bytes);
+            int ssum=0;
+            for(int i=0;i<curr.size();i++) ssum+=curr[i];
+            cout<<ssum<<"\n";
+        
+
+
+
         vector<int> vec;
         for(int i=0;i<256;i++) vec.push_back(curr[i]);
         int sum=0;
@@ -94,9 +109,11 @@ namespace bwtc {
         encode_recursive(0,block.size(),curr);
         
         out->flush();
+        delete mem;
     }
 
     void InterpolativeEncoder::encode_recursive(int index, uint32 size, freq& freqs) {
+            int ssum=0;
         if(freqs.size()==1) {
             return;
         } 
@@ -106,7 +123,7 @@ namespace bwtc {
             else output_bit(1);
             return;
         } 
-        
+
         if(size==2) {
             if(block_begin[index]<block_begin[index+1]) output_bit(0);
             else output_bit(1);
@@ -115,40 +132,57 @@ namespace bwtc {
         if(!IP_RLE && freqs.size()==2 && (size < MAX_DYN || (freqs[0]<MAX_DYN&&freqs[1]<MAX_DYN)) && ((freqs[0]*1.0/size)<0.35 || (freqs[0]*1.0/size)>0.65)) {
             uint32 perm=0;
             uint32 mx = F(freqs[0],freqs[1])-1;
- /*           cout<<"Vanhemmat: ";
-            for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
-            cout<<"\n";*/
             for(int i=index;i<index+size;i++) {
 
                 if(block_begin[i]==freqs.bytes[1]) {
-                    
+
                     if(freqs[0]>0) perm += F(freqs[0]-1,freqs[1]);
                     freqs[1]--;
                 } else freqs[0]--;
             }
             output_num(perm,mx);
-/*            cout<<"Permutaatio: "<<perm<<"/"<<mx<<"\n";
-            cout<<"Tulos: ";
-            for(int i=index;i<index+size;i++) cout<<block_begin[i];
-            cout<<"\n";*/
             return;
         }
 
-        int half  = size/2;
+        int half  = split(size);
 
-        freq lfreq=ranged_freq(index,index+half-1,freqs.bytes);
-        output(lfreq,freqs,half);
-        for(int i=0;i<freqs.size();i++) freqs[i]-=lfreq[i];
-        lfreq.clean();
-        freqs.clean();
-        if(half>1) encode_recursive(index,half,lfreq);
-        if(size-half>1) encode_recursive(index+half,size-half,freqs);
+
+
+        int left_size = half;
+        int right_size=size-half;
+
+        if(right_size < left_size) {
+            freq lfreq=ranged_freq(index,index+half-1,freqs.bytes);
+            freq rfreq= freqs - lfreq;
+            output(rfreq,freqs,right_size);
+
+
+
+
+            lfreq.clean();
+            rfreq.clean();
+            if(left_size>1) encode_recursive(index,half,lfreq);
+            if(right_size>1) encode_recursive(index+half,size-half,rfreq);
+        } else {
+            freq lfreq=ranged_freq(index,index+half-1,freqs.bytes);
+
+
+
+            output(lfreq,freqs,left_size);
+            uint32 e = freqs[0];
+            for(int i=0;i<freqs.size();i++) freqs[i]-=lfreq[i];
+            lfreq.clean();
+            freqs.clean();
+            if(left_size>1) encode_recursive(index,half,lfreq);
+            if(right_size>1) encode_recursive(index+half,size-half,freqs);
+
+        }
+
 
     }
 
     // output frequency list (values) given its parent (shape) and the sum of frequencies
     void InterpolativeEncoder::output(freq& values, freq& shape, int sum) {
-
         // find the maximum frequency in parent
         int max=0,maxi;
         for(int i=0;i<values.size();i++) {
@@ -162,10 +196,10 @@ namespace bwtc {
         //encode the other frequencies
         for(int i=0;i<values.size();i++) {
             if(i==maxi) continue; // skip the one with maximum frequency in parent
-            
+
             output_num(values[i],sum<shape[i]?sum:shape[i]);
-           sum-=values[i];
-           if(sum==0) return; // if the rest of the list is guaranteed to be 0s, skip
+            sum-=values[i];
+            if(sum==0) return; // if the rest of the list is guaranteed to be 0s, skip
         }
     }
 
@@ -202,8 +236,9 @@ namespace bwtc {
             block.setSize(size);
             output=block.begin();
         }
+        
         total.clean();
-    
+
 
         decode_recursive(0,size,total);
         in->flushBuffer();
@@ -237,7 +272,6 @@ namespace bwtc {
 
     // read a frequencey list (freqs) given its parents frequencies (shape) and the total number of characters (sum)
     void InterpolativeDecoder::input(freq& freqs, freq& shape,int sum) {
-
         // calculate the maximum value in parent freq list
         int max=0;
         int maxi;
@@ -247,24 +281,24 @@ namespace bwtc {
                 maxi=i;
             }
         }
-
         // decode the other frequencies
         for(int i=0;i<freqs.size();i++) 
         {
             if(sum==0) freqs[i]=0; // if the rest of the list is guaranteed to be 0s, skip
             else if(i!=maxi) {
                 sum -= freqs[i] = input_num(sum< shape[i]? sum : shape[i]);
-//                sum-=freqs[i]=input_bits(utils::logFloor(shape[i])+1); // read freqs[i] unless shape[i] is the maximum
+                //                sum-=freqs[i]=input_bits(utils::logFloor(shape[i])+1); // read freqs[i] unless shape[i] is the maximum
             }
         }
 
         freqs[maxi]=sum; // the maximum value is [size of string - sum of other frequencies]
+        
     }
 
 
     // recursively decode T[index .. index+size) given frequencies
     void InterpolativeDecoder::decode_recursive(int index, uint32 size, freq& freqs) {
-        assert(size>0);
+        bool debug=false;
         if(size==1) {
             for(int i=0;i<freqs.size();i++) {
                 if(freqs[i]>0) {
@@ -288,7 +322,7 @@ namespace bwtc {
                 else a=1;
             }
             else a = in->readBit();
-            
+
             for(int i=0;i<size;i++) output[index+i]=freqs.bytes[(i&1)^a];
             return;
         }
@@ -299,13 +333,13 @@ namespace bwtc {
             output[index+1]=freqs.bytes[1-a];
             return;
         }
-        
+
         if(!IP_RLE && freqs.size()==2 && (size < MAX_DYN || (freqs[0]<MAX_DYN&&freqs[1]<MAX_DYN))&& ((freqs[0]*1.0/size)<0.35 || (freqs[0]*1.0/size)>0.65)) {
-           /* cout<<"Vanhemmat: ";
-            for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
-            cout<<"\n";*/
+            /* cout<<"Vanhemmat: ";
+               for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
+               cout<<"\n";*/
             uint32 perm = input_num(F(freqs[0],freqs[1])-1);
-//            cout<<"Permutaatio: "<<perm<<"/"<<F(freqs[0],freqs[1])<<"\n";
+            //            cout<<"Permutaatio: "<<perm<<"/"<<F(freqs[0],freqs[1])<<"\n";
             for(int i=0;i<size;i++) {
                 if(freqs[0]==0) {
                     output[index+i]=freqs.bytes[1];
@@ -322,27 +356,40 @@ namespace bwtc {
                     freqs[0]--;
                     output[index+i]=freqs.bytes[0];
                 }
-               // cout<<"Laitetaan "<<output[index+i]<<", perm="<<perm<<"\n";
+                // cout<<"Laitetaan "<<output[index+i]<<", perm="<<perm<<"\n";
             }
- /*         cout<<"Tulos: ";
-            for(int i=0;i<size;i++) cout<<output[i+index];
-            cout<<"\n";*/
+            /*         cout<<"Tulos: ";
+                       for(int i=0;i<size;i++) cout<<output[i+index];
+                       cout<<"\n";*/
             return;
         }
 
-        int half  = size/2;
+        int half  = split(size);
+        int left_size = half;
+        int right_size=size-half;
+        if(left_size<= right_size) {
+            freq lfreq;
+            lfreq.set_bytes(freqs.bytes);
+            input(lfreq,freqs,left_size); //input left part
+            for(int i=0;i<freqs.size();i++) freqs[i]-=lfreq[i];
+            //          rfreq=freqs-lfreq; // right = parent-left
+            freqs.clean();
+            lfreq.clean();
+            decode_recursive(index,half,lfreq);
+            decode_recursive(index+half,size-half,freqs);
 
+        } else {
 
-        freq lfreq=freqs; //initialize left part
-        input(lfreq,freqs,half); //input left part
+            freq rfreq;
+            rfreq.set_bytes(freqs.bytes); //initialize right part
+            input(rfreq,freqs,right_size); //input right part
+            for(int i=0;i<freqs.size();i++) freqs[i]-=rfreq[i]; 
+            freqs.clean(); // remove 0s
+            rfreq.clean(); // remove 0s
 
-        freq rfreq=freqs-lfreq; // right = parent-left
-        
-        lfreq.clean(); // remove 0s
-        rfreq.clean(); // remove 0s
-
-        decode_recursive(index,half,lfreq); // decode left part
-        decode_recursive(index+half,size-half,rfreq); // decode right part
+            decode_recursive(index,half,freqs); // decode left part
+            decode_recursive(index+half,size-half,rfreq); // decode right part
+        }
     }
 
 
@@ -452,7 +499,7 @@ namespace bwtc {
             output_bits(num,bits);
         }
 
-        
+
     }
 
     uint32 InterpolativeDecoder::input_num(uint32 r) {
