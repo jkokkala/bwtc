@@ -1,3 +1,29 @@
+/**
+ * @file HuffmanCoders.cpp
+ * @author Jussi Kokkala <jussi.kokkala@helsinki.fi>
+ *
+ * @section LICENSE
+ *
+ * This file is part of bwtc.
+ *
+ * bwtc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * bwtc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with bwtc.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * 
+ * @section DESCRIPTION
+ *
+ * Header file for interpolative encoder and decoder
+ */
 #ifndef INTERPOLATIVECODERS_HPP
 #define INTERPOLATIVECODERS_HPP
 #include<iostream>
@@ -17,19 +43,16 @@
 using namespace std;
 namespace bwtc {
     
-
-
     class InterpolativeEncoder : public EntropyEncoder {
 
         public:
-            InterpolativeEncoder() : bytes_used(0) {
-            } 
+            InterpolativeEncoder() : bytes_used(0) {} 
             size_t transformAndEncode(BWTBlock& block, BWTManager& bwtm,OutStream* out);
             void encode(vector<byte>& block);
             freq ranged_freq(uint32 a, uint32 b,vector<byte>& bytes);
             void output(freq& values, freq& shape, int sum);
             void rec_output(vector<int>& vec, vector<int>& shape, int a, int b);
-    std::vector<byte> RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
+            std::vector<byte> RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
             void encode_recursive(int index, uint32 size, freq& freqs);
             OutStream* out;
             size_t bytes_used;
@@ -48,7 +71,7 @@ namespace bwtc {
             int tmpp;
 
             FreqMem* mem;
-            
+
     };
 
     class InterpolativeDecoder : public EntropyDecoder {

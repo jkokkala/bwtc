@@ -64,8 +64,6 @@ transformAndEncode(BWTBlock& block, BWTManager& bwtm, OutStream* out) {
     for(int i=0;i<a;i++) context_lengths[i]=size/a;
     context_lengths[0] += size % a;
     characterFrequencies=context_lengths;
-    //new
-
     writeBlockHeader(block, characterFrequencies, out);
     encodeData(block.begin(), characterFrequencies, block.size(), out);
     finishBlock(out);

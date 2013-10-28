@@ -1,3 +1,28 @@
+/**
+ * @file HuffmanCoders.cpp
+ * @author Jussi Kokkala <jussi.kokkala@helsinki.fi>
+ *
+ * @section LICENSE
+ *
+ * This file is part of bwtc.
+ *
+ * bwtc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * bwtc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with bwtc.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @section DESCRIPTION
+ *
+ * Implementations of interpolative encoder and decoder.
+ */
 #include "InterpolativeCoders.hpp"
 #include "Profiling.hpp"
 #include "Utils.hpp"
@@ -23,13 +48,13 @@ namespace bwtc {
 
     // compute the frequencies for characters given (bytes) in string T[a..b]
     freq InterpolativeEncoder::ranged_freq(uint32 a, uint32 b,vector<byte>& bytes) {
-        
+
         return  mem->search(a,b,bytes);
         freq ret(bytes.size());
         for(int j=0;j<bytes.size();j++) ret.bytes[j]=bytes[j];
         for(int j=0;j<bytes.size();j++) ret.bytemap[bytes[j]]=j;
-        
-        
+
+
 
 
         // if the string is short enough (<M*logN), it is faster to just iterate over the string
@@ -78,22 +103,11 @@ namespace bwtc {
 
     void InterpolativeEncoder::encode(vector<byte>& block) {
         block_begin=block.data();
-/*
-        //for each character i construct a sorted list of occurrences by index ( index[i] )
-        index.clear();
-        index.resize(256);
-        for(int i=0;i<256;i++) index[i].reserve(block.size()/10);
-        for(int i=0;i<block.size();i++) {
-            index[block_begin[i]].push_back(i);
-        }*/
         //compute and encode total frequencies
         freq curr(256);
         mem=new FreqMem(block_begin,block.size());
         curr=ranged_freq(0,block.size()-1,curr.bytes);
-            int ssum=0;
-            for(int i=0;i<curr.size();i++) ssum+=curr[i];
-            cout<<ssum<<"\n";
-        
+
 
 
 
@@ -107,13 +121,13 @@ namespace bwtc {
         curr.clean(); // remove 0s
 
         encode_recursive(0,block.size(),curr);
-        
+
         out->flush();
         delete mem;
     }
 
     void InterpolativeEncoder::encode_recursive(int index, uint32 size, freq& freqs) {
-            int ssum=0;
+        int ssum=0;
         if(freqs.size()==1) {
             return;
         } 
@@ -236,7 +250,7 @@ namespace bwtc {
             block.setSize(size);
             output=block.begin();
         }
-        
+
         total.clean();
 
 
@@ -270,7 +284,7 @@ namespace bwtc {
     }
 
 
-    // read a frequencey list (freqs) given its parents frequencies (shape) and the total number of characters (sum)
+    // read a frequency list (freqs) given its parents frequencies (shape) and the total number of characters (sum)
     void InterpolativeDecoder::input(freq& freqs, freq& shape,int sum) {
         // calculate the maximum value in parent freq list
         int max=0;
@@ -292,7 +306,7 @@ namespace bwtc {
         }
 
         freqs[maxi]=sum; // the maximum value is [size of string - sum of other frequencies]
-        
+
     }
 
 
@@ -335,11 +349,7 @@ namespace bwtc {
         }
 
         if(!IP_RLE && freqs.size()==2 && (size < MAX_DYN || (freqs[0]<MAX_DYN&&freqs[1]<MAX_DYN))&& ((freqs[0]*1.0/size)<0.35 || (freqs[0]*1.0/size)>0.65)) {
-            /* cout<<"Vanhemmat: ";
-               for(int i=0;i<freqs.size();i++) cout<<freqs.bytes[i]<<"/"<<freqs[i]<<" ";
-               cout<<"\n";*/
             uint32 perm = input_num(F(freqs[0],freqs[1])-1);
-            //            cout<<"Permutaatio: "<<perm<<"/"<<F(freqs[0],freqs[1])<<"\n";
             for(int i=0;i<size;i++) {
                 if(freqs[0]==0) {
                     output[index+i]=freqs.bytes[1];
@@ -356,11 +366,7 @@ namespace bwtc {
                     freqs[0]--;
                     output[index+i]=freqs.bytes[0];
                 }
-                // cout<<"Laitetaan "<<output[index+i]<<", perm="<<perm<<"\n";
             }
-            /*         cout<<"Tulos: ";
-                       for(int i=0;i<size;i++) cout<<output[i+index];
-                       cout<<"\n";*/
             return;
         }
 
@@ -372,7 +378,6 @@ namespace bwtc {
             lfreq.set_bytes(freqs.bytes);
             input(lfreq,freqs,left_size); //input left part
             for(int i=0;i<freqs.size();i++) freqs[i]-=lfreq[i];
-            //          rfreq=freqs-lfreq; // right = parent-left
             freqs.clean();
             lfreq.clean();
             decode_recursive(index,half,lfreq);

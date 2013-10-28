@@ -148,11 +148,6 @@ namespace bwtc {
             start=curr;
 
         }
-
-        /*       long ppos = out->getPos();
-                 for(int i=0;i<6;i++) out->writeByte(0);
-                 out->write48bits(data.size(),ppos);
-                 bytes_used+=6;*/
         HuffmanUtilEncoder huffman;
         ArithmeticUtilEncoder arithmetic(out);
         out->flush();
@@ -191,14 +186,6 @@ namespace bwtc {
         HuffmanUtilDecoder huffman;
         ArithmeticUtilDecoder arithmetic(in);
 
-
- /*       long ppos=in->pos;
-        int l = in->read48bits();
-        in->flushBuffer();
-        data.resize(l);
-        utils::gammaDecode(data,in,1);*/
- 
-        
         if(m_decoder=='A' || m_decoder=='a') arithmetic.decode(data);
         else huffman.decodeBlock(data,in);
         in->flushBuffer();

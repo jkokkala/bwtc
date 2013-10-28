@@ -1,3 +1,30 @@
+/**
+ * @file InterpolativeCoderUtils.hpp
+ * @author Jussi Kokkala <jussi.kokkala@helsinki.fi>
+ *
+ * @section LICENSE
+ *
+ * This file is part of bwtc.
+ *
+ * bwtc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * bwtc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with bwtc.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @section DESCRIPTION
+ *
+ * Header file for interpolative encoding and decoding utilities
+ */
+
+
 #ifndef INTERPOLATIVECODERUTILS_HPP
 #define INTERPOLATIVECODERUTILS_HPP
 #include "globaldefs.hpp"
@@ -73,18 +100,6 @@ namespace bwtc {
             return a;
         }
         void clean() {
-            /*           vector<uint32> freq;
-                         vector<byte> nbytes;
-                         for(int i=0;i<size();i++) if(frequencies[i]>0) {
-                         freq.push_back(frequencies[i]);
-                         nbytes.push_back(bytes[i]);
-                         }
-                         frequencies=freq;
-                         bytes=nbytes;
-                         for(int i=0;i<bytes.size();i++) bytemap[bytes[i]]=i;
-
-                         return;*/
-            /// JUU
             int previous_slot=0;
             int removes=0;
             for(int i=0;i<frequencies.size();i++) {
@@ -101,14 +116,6 @@ namespace bwtc {
             }   
             frequencies.resize(frequencies.size()-removes);
             bytes.resize(size());
-
-            /*            assert(freq.size()==size());
-                          assert(nbytes.size()==size());
-
-                          for(int i=0;i<size();i++) assert(frequencies[i]>0);
-                          for(int i=0;i<size();i++) assert(bytes[i]==nbytes[i]);
-                          for(int i=0;i<size();i++) assert(freq[i]==frequencies[i]);
-                          for(int i=0;i<bytes.size();i++) assert(bytemap[bytes[i]]==i);*/
         }
     };
 

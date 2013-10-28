@@ -1,3 +1,28 @@
+/**
+ * @file InterpolativeCoderUtils.cpp
+ * @author Jussi Kokkala <jussi.kokkala@helsinki.fi>
+ *
+ * @section LICENSE
+ *
+ * This file is part of bwtc.
+ *
+ * bwtc is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * bwtc is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with bwtc.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * @section DESCRIPTION
+ *
+ * Implementation of interpolative encoding and decoding utilities
+ */
 #include "InterpolativeCoderUtils.hpp"
 #include<cstdio>
 #include<cstdlib>
@@ -68,18 +93,6 @@ namespace bwtc {
                 sum+=t;
             }
         }
-        /*
-        b=a+big_interval-1;
-        if(b>=size) b=size-1;
-        memset(small_mem,0,big_interval*bytes.size());
-        smallmemsize=bytes.size();
-        for(int i=0;i<bytes.size();i++) smallbytemap[bytes[i]]=i;
-        small_begin=a;
-        small_end=b;
-        for(int i=0;i<b-a+1;i++) {
-            if(i>0) for(int j=0;j<bytes.size();j++) small_mem[i*bytes.size()+j]=small_mem[(i-1)*bytes.size()+j];
-            small_mem[i*bytes.size()+smallbytemap[block[i+a]]]++;
-        }*/
     }
 
     freq FreqMem::small_search(uint a, uint b,vector<byte>& bytes) {
@@ -90,7 +103,6 @@ namespace bwtc {
             return f2;
         }
         if(!(a >=small_begin && b <= small_end)) {
- //           if(b-a<small_end-small_begin)
             update_small(a,b,bytes);            
         }
         b++;
@@ -106,17 +118,6 @@ namespace bwtc {
             sum += f[i];
         }
         assert(sum==b-a);
-        return f;
-        
-/*
-        freq f(bytes.size());
-        for(int i=0;i<bytes.size();i++) {
-            f.bytes[i]=bytes[i];
-            f.bytemap[bytes[i]]=i;
-            f[i]=small_mem[(b-small_begin)*smallmemsize+smallbytemap[bytes[i]]];
-            if(a>small_begin) f[i] -= small_mem[(a-1-small_begin)*smallmemsize+smallbytemap[bytes[i]]];
-
-        }*/
         return f;
     }
 
