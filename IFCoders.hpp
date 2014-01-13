@@ -47,7 +47,7 @@ namespace bwtc {
             size_t transformAndEncode(BWTBlock& block, BWTManager& bwtm,
                     OutStream* out);
 
-    std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
+            std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used);
 
 
 

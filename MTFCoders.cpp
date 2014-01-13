@@ -1,6 +1,6 @@
 /**
  * @file MTFCoders.cpp
- * @author Jussi Kokkala <jkokkala@gmail.com>
+ * @author Jussi Kokkala <jussi.kokkala (at) helsinki.fi>
  *
  * @section LICENSE
  *
@@ -51,7 +51,7 @@ namespace bwtc {
     //maxval = maximum value for rle, e.g. RLE0 maxval=0, RLE maxval=255
     //minrun = min number of occurrences in a run
     std::vector<byte> MTFEncoder::RLE(byte* orig, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used,char encoder) {
-        
+
         std::vector<byte> data;
         std::vector<uint64> runlengths;
         data.reserve(length);
@@ -105,8 +105,12 @@ namespace bwtc {
 
     size_t MTFEncoder::transformAndEncode(BWTBlock& block, BWTManager& bwtm, OutStream* out) {
         bwtm.doTransform(block);
+
         PROFILE("MTFEncoder::encodeData");
         size_t bytes_used=block.writeHeader(out)+6;
+        for(int i=0;i<block.size();i++) {
+            std::cout<<block.begin()[i];
+        }
 
 
         Node* start=new Node(0);

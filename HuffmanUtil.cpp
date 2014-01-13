@@ -2,7 +2,7 @@
  * @file HuffmanUtilCoders.cpp
  * @author Dominik Kempa <dominik.kempa@cs.helsinki.fi>
  * @author Pekka Mikkola <pmikkol@gmail.com>
- * @author Jussi Kokkala <jkokkala@gmail.com>
+ * @author Jussi Kokkala <jussi.kokkala (at) helsinki.fi>
  *
  * @section LICENSE
  *

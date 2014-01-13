@@ -1,6 +1,6 @@
 /**
  * @file IFCoders.cpp
- * @author Jussi Kokkala <jkokkala@gmail.com>
+ * @author Jussi Kokkala <jussi.kokkala (at) helsinki.fi>
  *
  * @section LICENSE
  *
@@ -44,7 +44,7 @@ namespace bwtc {
     IFEncoder::IFEncoder(){}
 
     IFEncoder::~IFEncoder(){}
-    
+
     vector<uint32> sort_index(vector<uint32>& freqs) {
         vector<uint32> order(freqs.size());
 
@@ -90,13 +90,13 @@ namespace bwtc {
                     }
 
                 }
-                
+
                 if(!first&&vec[j]==ch) {
                     first=true;
 
                     occ[0]=j;
                 }
-                
+
             }
             bytes_used+=utils::gammaEncode(occ,out,1);
         }

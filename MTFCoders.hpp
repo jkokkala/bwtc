@@ -54,7 +54,7 @@ namespace bwtc {
 
             void encodeData(const byte* data, const std::vector<uint32>& stats,
                     uint32 blockSize, OutStream* out);
-    std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used, char encoder);
+            std::vector<byte> RLE(byte* data, uint32 length, byte maxval, int minrun, OutStream* out, size_t& bytes_used, char encoder);
 
 
 
